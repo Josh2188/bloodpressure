@@ -247,7 +247,7 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="grid grid-cols-2 gap-2 mb-2">
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
                     <div class="text-[10px] text-slate-400 font-bold mb-0.5">
                         <i class="ph-fill ph-sun text-amber-500"></i> 晨間基線 <span class="text-[8px] font-normal">(SYS/DIA)</span>
@@ -259,6 +259,20 @@
                         <i class="ph-fill ph-moon text-indigo-400"></i> 晚間基線 <span class="text-[8px] font-normal">(SYS/DIA)</span>
                     </div>
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="eveningAvgDisplay">--</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mb-3">
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
+                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-activity text-rose-400"></i> 脈壓均值 <span class="text-[8px] font-normal">(PP)</span></div>
+                    <div class="text-base font-black text-slate-700 dark:text-slate-200" id="ppAvgDisplay">--</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
+                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-wave-sine text-violet-400"></i> 變異度 <span class="text-[8px] font-normal">(SD)</span></div>
+                    <div class="text-base font-black text-slate-700 dark:text-slate-200" id="bpvSdDisplay">--</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
+                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-clipboard-text text-slate-400"></i> 7日量測</div>
+                    <div class="text-base font-black text-slate-700 dark:text-slate-200" id="recordCountDisplay">--</div>
                 </div>
             </div>
             
@@ -298,6 +312,30 @@
         </section>
 
         <!-- ========================================== -->
+        <!-- 工具列 (提醒 / 備份 / 匯入) -->
+        <!-- ========================================== -->
+        <section class="hide-in-doctor-mode">
+            <div class="flex flex-col items-center gap-3">
+                <div id="backupReminderBox" class="hidden w-full px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2 font-medium">
+                    <i class="ph-bold ph-warning-circle text-amber-500"></i>
+                    <span id="backupReminderText"></span>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full justify-center">
+                    <button onclick="window.setupReminders()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex-1 sm:flex-none justify-center">
+                        <i class="ph-bold ph-alarm"></i> 設定提醒
+                    </button>
+                    <button onclick="window.exportData()" class="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex-1 sm:flex-none justify-center">
+                        <i class="ph-bold ph-download-simple"></i> 備份
+                    </button>
+                    <label class="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95 flex-1 sm:flex-none justify-center">
+                        <i class="ph-bold ph-upload-simple"></i> 匯入
+                        <input type="file" id="importFile" accept=".json" class="hidden" onchange="window.importData(event)">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
         <!-- 詳細紀錄列表 -->
         <!-- ========================================== -->
         <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-transparent dark:border-slate-800 overflow-hidden transition-colors duration-300">
@@ -320,30 +358,6 @@
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- 底部功能區 (提醒 / 備份 / 匯入) -->
-        <!-- ========================================== -->
-        <section class="hide-in-doctor-mode pt-4 border-t border-slate-200 dark:border-slate-800">
-            <div class="flex flex-col items-center gap-3">
-                <div id="backupReminderBox" class="hidden w-full px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2 font-medium">
-                    <i class="ph-bold ph-warning-circle text-amber-500"></i>
-                    <span id="backupReminderText"></span>
-                </div>
-                
-                <div class="flex flex-wrap gap-2 w-full justify-center">
-                    <button onclick="window.setupReminders()" class="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex-1 sm:flex-none justify-center">
-                        <i class="ph-bold ph-alarm"></i> 設定提醒
-                    </button>
-                    <button onclick="window.exportData()" class="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex-1 sm:flex-none justify-center">
-                        <i class="ph-bold ph-download-simple"></i> 備份
-                    </button>
-                    <label class="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer active:scale-95 flex-1 sm:flex-none justify-center">
-                        <i class="ph-bold ph-upload-simple"></i> 匯入
-                        <input type="file" id="importFile" accept=".json" class="hidden" onchange="window.importData(event)">
-                    </label>
-                </div>
-            </div>
-        </section>
     </main>
 
     <!-- ========================================== -->
@@ -410,6 +424,29 @@
                 <h3 class="text-sm font-bold flex items-center gap-1.5 mb-1"><i class="ph-fill ph-calendar-blank text-orange-500"></i> 星期/時段風險熱力圖</h3>
                 <div class="grid grid-cols-8 gap-1 text-center mt-3" id="heatmapGrid"></div>
             </div>
+
+            <!-- 月份統計趨勢 -->
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                <h3 class="text-sm font-bold flex items-center gap-1.5 mb-1"><i class="ph-fill ph-chart-bar text-indigo-500"></i> 月份統計趨勢</h3>
+                <p class="text-[10px] text-slate-400 leading-relaxed mb-2">每月收縮壓／舒張壓平均值。紅色虛線為 130 mmHg 目標基準線。</p>
+                <div class="relative h-56 w-full">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 夜間降壓率趨勢 -->
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                <h3 class="text-sm font-bold flex items-center gap-1.5 mb-1"><i class="ph-fill ph-moon-stars text-violet-500"></i> 夜間降壓率趨勢 (Dipping Pattern)</h3>
+                <p id="dipPatternSummary" class="text-xs font-bold mb-2 leading-relaxed p-2 rounded-lg"></p>
+                <div class="relative h-56 w-full">
+                    <canvas id="dipRateChart"></canvas>
+                </div>
+                <div class="flex flex-wrap gap-3 mt-2 text-[10px] font-bold text-slate-400">
+                    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-400 mr-1"></span>正常 10–20%</span>
+                    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-rose-400 mr-1"></span>不降型 &lt;10%</span>
+                    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-400 mr-1"></span>極端降 &gt;20%</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -442,7 +479,7 @@
         let chartInstance = null; 
         let isDoctorMode = false;
         const PATIENT_BIRTHDATE = new Date('1980-01-02');
-        let ttrChart = null, ppMapChart = null, scatterChart = null, longTermChart = null; 
+        let ttrChart = null, ppMapChart = null, scatterChart = null, longTermChart = null, monthlyChart = null, dipRateChart = null;
 
         // =========================================
         // [系統初始化]
@@ -1018,10 +1055,13 @@
                         { label: '舒張壓日均', data: longDia, borderColor: '#0ea5e9', backgroundColor: '#0ea5e9', borderWidth: 1.5, tension: 0.3, pointRadius: 1 }
                     ]
                 },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    scales: { y: { min: 40, max: 200, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: {size: 11} } } } 
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 40, max: 200, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 10, callback: (v, i) => sortedDates[i] ? sortedDates[i].slice(5) : '' } }
+                    },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: {size: 11} } } }
                 }
             });
 
@@ -1104,6 +1144,11 @@
             });
             Object.values(groupedByDate).forEach(day => { if(day['早'] && day['晚']) pairedData.push({ x: day['早'], y: day['晚'] }); });
 
+            const scatterPad = 10;
+            const scatterAllVals = pairedData.flatMap(p => [p.x, p.y]);
+            const scatterMin = scatterAllVals.length > 0 ? Math.max(60, Math.min(...scatterAllVals) - scatterPad) : 90;
+            const scatterMax = scatterAllVals.length > 0 ? Math.min(220, Math.max(...scatterAllVals) + scatterPad) : 180;
+
             scatterChart = new Chart(document.getElementById('scatterChart').getContext('2d'), {
                 type: 'scatter',
                 data: {
@@ -1112,8 +1157,8 @@
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: {
-                        x: { title: { display: true, text: '早晨收縮壓 (SYS)' }, min: 90, max: 180 },
-                        y: { title: { display: true, text: '晚間收縮壓 (SYS)' }, min: 90, max: 180 }
+                        x: { title: { display: true, text: '早晨收縮壓 (SYS)' }, min: scatterMin, max: scatterMax, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } },
+                        y: { title: { display: true, text: '晚間收縮壓 (SYS)' }, min: scatterMin, max: scatterMax, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } }
                     }
                 }
             });
@@ -1163,6 +1208,102 @@
                         cell.title = `平均: ${avg}\n筆數: ${counts[slot][i]} 筆`;
                     }
                     grid.appendChild(cell);
+                }
+            });
+            // 7. 月份統計趨勢
+            if (monthlyChart) monthlyChart.destroy();
+            const monthlyAgg = {};
+            records.forEach(r => {
+                const ym = r.date.slice(0, 7);
+                if (!monthlyAgg[ym]) monthlyAgg[ym] = { sysSum: 0, diaSum: 0, count: 0 };
+                monthlyAgg[ym].sysSum += r.sys;
+                monthlyAgg[ym].diaSum += r.dia;
+                monthlyAgg[ym].count++;
+            });
+            const months = Object.keys(monthlyAgg).sort();
+            const monthlyAvgSys = months.map(m => Math.round(monthlyAgg[m].sysSum / monthlyAgg[m].count));
+            const monthlyAvgDia = months.map(m => Math.round(monthlyAgg[m].diaSum / monthlyAgg[m].count));
+            const thisYear = new Date().getFullYear().toString();
+            const monthLabels = months.map(m => m.slice(0, 4) === thisYear ? m.slice(5) + '月' : m.replace('-', '/'));
+
+            monthlyChart = new Chart(document.getElementById('monthlyChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: monthLabels,
+                    datasets: [
+                        { label: '收縮壓均', data: monthlyAvgSys, backgroundColor: 'rgba(244,63,94,0.65)', borderColor: '#f43f5e', borderWidth: 1, borderRadius: 4, order: 2 },
+                        { label: '舒張壓均', data: monthlyAvgDia, backgroundColor: 'rgba(99,102,241,0.65)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 4, order: 2 },
+                        { label: '目標 130', data: Array(months.length).fill(130), type: 'line', borderColor: 'rgba(239,68,68,0.55)', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false, order: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 50, max: 180, grid: { color: isDark ? '#1e293b' : '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }
+                }
+            });
+
+            // 8. 夜間降壓率趨勢 (Dipping Pattern)
+            if (dipRateChart) dipRateChart.destroy();
+            const groupedForDip = {};
+            records.forEach(r => {
+                if (!groupedForDip[r.date]) groupedForDip[r.date] = {};
+                groupedForDip[r.date][r.timeSlot] = r.sys;
+            });
+            const dipDates = [], dipRates = [], dipColors = [];
+            Object.keys(groupedForDip).sort().forEach(date => {
+                const day = groupedForDip[date];
+                if (day['早'] && day['晚']) {
+                    const rate = Math.round((day['早'] - day['晚']) / day['早'] * 100);
+                    dipDates.push(date.slice(5));
+                    dipRates.push(rate);
+                    dipColors.push(rate < 10 ? '#f43f5e' : rate > 20 ? '#3b82f6' : '#10b981');
+                }
+            });
+
+            const dipSummaryEl = document.getElementById('dipPatternSummary');
+            if (dipRates.length >= 5) {
+                const recentDips = dipRates.slice(-14);
+                const nonDipperCount = recentDips.filter(r => r < 10).length;
+                const extremeDipCount = recentDips.filter(r => r > 20).length;
+                const normalDipCount = recentDips.length - nonDipperCount - extremeDipCount;
+                const dominant = nonDipperCount >= extremeDipCount && nonDipperCount >= normalDipCount ? 'non'
+                               : extremeDipCount >= normalDipCount ? 'extreme' : 'normal';
+                if (dominant === 'non') {
+                    dipSummaryEl.className = 'text-xs font-bold mb-2 leading-relaxed p-2 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50';
+                    dipSummaryEl.innerHTML = `<i class="ph-fill ph-warning-octagon mr-1"></i>近 14 筆有 <strong>${nonDipperCount}</strong> 次屬「不降型 Non-Dipper」，夜間 BP 未回落，心腎器官長期受壓，請告知醫師。`;
+                } else if (dominant === 'extreme') {
+                    dipSummaryEl.className = 'text-xs font-bold mb-2 leading-relaxed p-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50';
+                    dipSummaryEl.innerHTML = `<i class="ph-fill ph-info mr-1"></i>近期以「極端降壓型 Extreme Dipper」居多，夜間下降 &gt;20%，年長者須留意夜間腦部及心臟灌流不足的缺血風險。`;
+                } else {
+                    dipSummaryEl.className = 'text-xs font-bold mb-2 leading-relaxed p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50';
+                    dipSummaryEl.innerHTML = `<i class="ph-fill ph-check-circle mr-1"></i>近期以「正常降壓型 Normal Dipper」為主，夜間血壓順利回落 10–20%，心血管保護機制運作良好。`;
+                }
+            } else {
+                dipSummaryEl.className = 'text-xs font-bold mb-2 leading-relaxed p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700';
+                dipSummaryEl.innerHTML = '需要至少 5 個早晚配對日的資料才能進行 Dipping Pattern 分析。';
+            }
+
+            dipRateChart = new Chart(document.getElementById('dipRateChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: dipDates,
+                    datasets: [
+                        { label: '降壓率 %', data: dipRates, backgroundColor: dipColors, borderRadius: 3, order: 2 },
+                        { label: '正常下限 10%', data: Array(dipDates.length).fill(10), type: 'line', borderColor: 'rgba(16,185,129,0.7)', borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, fill: false, order: 1 },
+                        { label: '正常上限 20%', data: Array(dipDates.length).fill(20), type: 'line', borderColor: 'rgba(59,130,246,0.7)', borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, fill: false, order: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { title: { display: true, text: 'Dip %', font: { size: 10 } }, grid: { color: isDark ? '#1e293b' : '#f1f5f9' }, ticks: { callback: v => v + '%' } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } }
+                    },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } } }
                 }
             });
         };
@@ -1249,61 +1390,118 @@
             document.getElementById('morningAvgDisplay').innerHTML = `${avgMornSys} <span class="text-sm font-normal text-slate-500">/ ${avgMornDia}</span>`;
             document.getElementById('eveningAvgDisplay').innerHTML = `${avgEveSys} <span class="text-sm font-normal text-slate-500">/ ${avgEveDia}</span>`;
             
-            let mode = 'D'; 
-            const diff = avgMornSys - avgEveSys; 
-            
-            if (avgMornSys >= 130 && diff >= 15 && diff < 30) mode = 'A'; 
-            else if (avgEveSys >= 130 && diff <= 0) mode = 'B'; 
-            else if (diff >= 30) mode = 'C';
-            
-            let hrAdvice = ''; 
-            if (avgHr !== null) {
-                if (avgHr > 90) hrAdvice = '<li><strong>心跳頻率偏快：</strong>近期心率偏高，可能是壓力大或交感神經太興奮，盡量減少咖啡因攝取。</li>';
-                else if (avgHr < 60) hrAdvice = '<li><strong>心跳頻率偏低：</strong>若是藥物作用且無頭暈則免擔心，否則請留意心臟節律。</li>';
+            // 計算脈壓 PP 與 7 日收縮壓標準差 SD
+            const ppValues = recent7Days.map(r => r.sys - r.dia);
+            const avgPP = ppValues.length > 0 ? Math.round(ppValues.reduce((a, b) => a + b, 0) / ppValues.length) : null;
+            const sysList7 = recent7Days.map(r => r.sys);
+            let sd7 = null;
+            if (sysList7.length > 1) {
+                const mean7 = sysList7.reduce((a, b) => a + b, 0) / sysList7.length;
+                sd7 = Math.round(Math.sqrt(sysList7.reduce((a, b) => a + Math.pow(b - mean7, 2), 0) / sysList7.length) * 10) / 10;
             }
-            
-            const box = document.getElementById('trendSuggestionBox'); 
-            box.className = 'rounded-xl p-3 border transition-colors duration-300 '; 
+
+            // 填入副指標欄位
+            const ppEl = document.getElementById('ppAvgDisplay');
+            const sdEl = document.getElementById('bpvSdDisplay');
+            const cntEl = document.getElementById('recordCountDisplay');
+            if (ppEl) {
+                ppEl.innerHTML = avgPP !== null ? `${avgPP} <span class="text-xs font-normal text-slate-400">mmHg</span>` : '--';
+                ppEl.className = `text-base font-black ${avgPP !== null && avgPP >= 60 ? 'text-rose-500' : avgPP !== null && avgPP >= 50 ? 'text-amber-500' : 'text-slate-700 dark:text-slate-200'}`;
+            }
+            if (sdEl) {
+                sdEl.innerHTML = sd7 !== null ? `${sd7} <span class="text-xs font-normal text-slate-400">mmHg</span>` : '--';
+                sdEl.className = `text-base font-black ${sd7 !== null && sd7 > 15 ? 'text-rose-500' : sd7 !== null && sd7 > 10 ? 'text-amber-500' : 'text-slate-700 dark:text-slate-200'}`;
+            }
+            if (cntEl) cntEl.innerText = recent7Days.length;
+
+            let mode = 'D';
+            const diff = avgMornSys - avgEveSys;
+            if (avgMornSys >= 130 && diff >= 15 && diff < 30) mode = 'A';
+            else if (avgEveSys >= 130 && diff <= 0) mode = 'B';
+            else if (diff >= 30) mode = 'C';
+
+            // 心率附加建議
+            let hrAdvice = '';
+            if (avgHr !== null) {
+                if (avgHr > 90) hrAdvice = `<li><strong>靜息心率偏快（均值 ${avgHr} bpm）：</strong>靜息心率持續超過 90 bpm，交感神經可能過度活化。研究顯示靜息心率 >90 者心血管風險增加約 30%。建議減少咖啡因、酒精與高壓情境，必要時與醫師討論是否加入 β 阻斷劑。</li>`;
+                else if (avgHr < 60) hrAdvice = `<li><strong>靜息心率偏慢（均值 ${avgHr} bpm）：</strong>若為 β 阻斷劑或 CCB 藥物所致且無頭暈目眩，可暫觀察。若無服藥且有疲倦或喘氣症狀，請就醫評估心臟節律問題（如竇房結症候群）。</li>`;
+            }
+
+            // 變異度附加警告
+            let sdWarning = '';
+            if (sd7 !== null && sd7 > 15) {
+                sdWarning = `<li><strong>血壓變異度偏高（SD = ${sd7} mmHg）：</strong>近 7 日收縮壓標準差超過 15 mmHg。ESH 2023 指引指出此屬高度變異，與大動脈僵硬、微血管損傷及中風風險上升顯著相關。建議減少情緒起伏、避免過度勞累，並與醫師討論是否調整用藥方案。</li>`;
+            } else if (sd7 !== null && sd7 > 10) {
+                sdWarning = `<li><strong>血壓變異度稍高（SD = ${sd7} mmHg）：</strong>近 7 日收縮壓標準差在 10–15 mmHg 之間，屬中度變異。建議維持規律作息、固定量測時間，減少影響血壓的外在因素。</li>`;
+            }
+
+            // 脈壓附加警告
+            let ppWarning = '';
+            if (avgPP !== null && avgPP >= 60) {
+                ppWarning = `<li><strong>脈壓偏寬（PP 均值 = ${avgPP} mmHg）：</strong>脈壓 ≥ 60 mmHg 反映大動脈彈性下降、血管僵硬度增加。Framingham 研究證實，脈壓每上升 10 mmHg，冠狀動脈事件風險增加 12–16%。建議定期評估動脈硬化相關指標（如 PWV 脈波傳導速度）。</li>`;
+            } else if (avgPP !== null && avgPP >= 50) {
+                ppWarning = `<li><strong>脈壓偏高（PP 均值 = ${avgPP} mmHg）：</strong>脈壓 50–59 mmHg 屬輕度偏高範圍，提示動脈彈性輕度下降，宜注意低鈉飲食、減少飽和脂肪攝取，維持規律有氧運動。</li>`;
+            }
+
+            const box = document.getElementById('trendSuggestionBox');
+            box.className = 'rounded-xl p-3 border transition-colors duration-300 ';
             container.classList.remove('hidden');
-            
+
             const currentAge = getAge();
-            
+
             const map = {
                 'A': {
                     css: 'bg-orange-50 dark:bg-orange-900/10 text-orange-900 dark:text-orange-300 border-orange-200 dark:border-orange-800/50',
                     icon: 'ph-warning text-orange-500',
-                    title: 'Mia 發現警訊：晨間飆高 (Morning Surge)', 
-                    desc: 'Josh弟弟，你早晨血壓明顯比晚上高很多，要小心清晨的器官壓力風險喔。',
-                    advice: '<li>若有服藥，可能藥效撐不到 24 小時。沒吃藥的話代表甦醒時交感神經太緊繃了。</li><li>早上離開被窩千萬別太快，先在床邊坐個 2 分鐘。</li>'
+                    title: 'Mia 發現警訊：晨間飆高 (Morning Surge)',
+                    desc: `Josh弟弟，你早晨均壓 (${avgMornSys}/${avgMornDia}) 比晚間 (${avgEveSys}/${avgEveDia}) 高出 ${diff} mmHg，符合「晨間飆高」模式。清晨 6–10 時交感神經急速活化、腎素-血管張力素系統 (RAAS) 分泌攀升、血小板聚集能力同步增強，三重機制共同作用，使此時段成為心肌梗塞與腦中風的最高峰時段（ESH 2023）。`,
+                    advice: `<li><strong>評估藥效覆蓋：</strong>若有服用降壓藥，晨間高峰可能代表藥效未能覆蓋整個 24 小時，在「谷值 (trough)」時段出現血壓回升。回診時請告知醫師此數字，評估是否換用長效製劑或分次給藥。</li>
+                             <li><strong>起床動作放慢：</strong>醒來後先在床上靜躺 30 秒，再緩慢坐起、靜待 1–2 分鐘後才站立。此舉可讓交感神經緩慢活化，有效降低晨間血壓急升幅度。</li>
+                             <li><strong>避免清晨強刺激：</strong>冷水澡、劇烈晨跑、緊張通勤等刺激會加劇血管收縮，建議推遲至早餐後血壓穩定再進行。</li>
+                             <li><strong>確保晨間量測準確性：</strong>每次在起床 1 小時內、排尿後、服藥前量測，才能精確捕捉真實晨間基線，為醫師提供最可靠的診斷依據。</li>`
                 },
                 'B': {
                     css: 'bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-800/50',
                     icon: 'ph-warning-octagon text-rose-500',
-                    title: 'Mia 嚴厲警告：夜間不降 (Non-dipper)', 
-                    desc: 'Josh弟弟，這個數字我不喜歡。晚上的血壓沒降下來，器官連續在承受高壓。',
-                    advice: '<li>這通常代表鹽吃太多了。明天開始嚴格限鈉（每天低於 6g）。</li><li>晚上會打呼嗎？要留意睡眠呼吸中止症的缺氧反應。</li>'
+                    title: 'Mia 嚴厲警告：夜間不降 (Non-Dipper)',
+                    desc: `Josh弟弟，正常人夜間血壓應比白天下降 10–20%（「Dipper 型」）。你近期晚間均壓 (${avgEveSys}/${avgEveDia}) 未見明顯回落，屬「Non-Dipper 型」。ESH 2023 指引明確指出此模式與左心室肥厚、蛋白尿、動脈僵硬等靶器官損傷高度相關；21 年長期追蹤研究顯示 Non-Dipper 心血管事件發生率高達 28%，遠高於正常 Dipper 的 6.6%。這是需要積極處理的訊號。`,
+                    advice: `<li><strong>嚴格限鈉是首要關鍵：</strong>高鹽攝取導致血漿容量擴張、夜間腎臟排鈉負荷過重，是 Non-Dipper 最常見成因。即日起每日鈉攝取控制在 2,000 mg 以下（約 5 公克食鹽），嚴格減少醬油、醃製品、加工食品及外食。</li>
+                             <li><strong>排查睡眠呼吸中止症 (OSA)：</strong>夜間反覆缺氧持續激活交感神經，抑制血壓夜間回落。若有打鼾、白天嗜睡、晨起頭痛等症狀，請積極安排睡眠多項生理檢查 (PSG)。</li>
+                             <li><strong>監測腎功能：</strong>慢性腎病 (CKD) 會破壞夜間 BP 調節機制，且 Non-Dipper 與腎損傷形成惡性循環。建議定期檢測血清肌酸酐、eGFR 及晨尿 ACR（白蛋白/肌酸酐比值）。</li>
+                             <li><strong>時間療法 (Chronotherapy)：</strong>研究顯示將部分降壓藥移至睡前服用可有效改善 Non-Dipper 模式（HYGIA 研究）。請主動與醫師討論是否適合調整給藥時間，切勿自行更改劑量。</li>`
                 },
                 'C': {
                     css: 'bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-800/50',
                     icon: 'ph-trend-down text-blue-500',
-                    title: currentAge < 70 ? 'Mia 幫解讀：極端下降 (良性調節)' : 'Mia 發現警訊：極端下降 (缺血高危)', 
-                    desc: currentAge < 70 ? `夜間血壓降幅滿大的，套用你 ${currentAge} 歲的模型來看，這是血管彈性很好的表現。` : `這對你來說有點危險，夜間血壓掉太多會突破器官自我調節的底線。`,
-                    advice: currentAge < 70 ? '<li>只要早上起床不會頭暈目眩，就維持現在的健康作息即可喔。</li>' : '<li>絕對不要在睡前吃強效降壓藥，會大幅增加無症狀缺血風險。</li>'
+                    title: currentAge < 65 ? 'Mia 解讀：極端夜降 (Extreme Dipper) — 年齡評估尚可' : 'Mia 發現警訊：極端夜降 (Extreme Dipper) — 缺血高危',
+                    desc: currentAge < 65
+                        ? `早晨均壓 (${avgMornSys}) 比晚間 (${avgEveSys}) 高出 ${diff} mmHg，夜間降幅超過 20%，屬「Extreme Dipper 型」。以你目前 ${currentAge} 歲的年齡模型評估，此種大幅夜間回落反映自律神經調節能力良好，臨床心血管風險相對尚可，但仍需持續監控。`
+                        : `早晨均壓 (${avgMornSys}) 比晚間 (${avgEveSys}) 高出 ${diff} mmHg，夜間降幅超過 20%，屬「Extreme Dipper 型」。AHA Hypertension 2020 研究顯示，65 歲以上患者此型心血管事件風險較 Normal Dipper 高出 2–4 倍，機制為夜間相對低血壓造成心腦灌流不足，對合併動脈狹窄者尤其危險。`,
+                    advice: currentAge < 65
+                        ? `<li><strong>觀察起床症狀：</strong>只要早晨起床沒有頭暈目眩、視力短暫模糊或肢體無力，維持現有健康作息即可。這些症狀若出現，應立刻就醫。</li>
+                           <li><strong>避免睡前飲酒：</strong>酒精具血管擴張效應，會加劇夜間血壓過度下降。建議睡前 3 小時內不飲酒。</li>
+                           <li><strong>睡前補充水分：</strong>睡前適量補水（150–200 ml），預防夜間因脫水加劇低血壓效應。</li>`
+                        : `<li><strong>避免睡前服用強效降壓藥：</strong>長效 CCB 高劑量、ARB/ACEI 大劑量若於睡前服用，將大幅增加夜間無症狀心腦缺血風險。務必請醫師評估是否調整至白天服用。</li>
+                           <li><strong>警惕一過性缺血症狀：</strong>若出現晨起頭暈、短暫視力模糊、口齒不清或肢體無力等症狀，請立刻就醫進行腦灌流評估，不可輕忽。</li>
+                           <li><strong>睡前補充水分：</strong>確保睡前攝取足夠水分（200–250 ml），脫水會顯著加劇夜間低血壓風險。</li>
+                           <li><strong>嘗試抬高床頭：</strong>將床頭抬高約 10–15 度可輕度緩解夜間極端降壓效應，適合有頭暈症狀者嘗試。</li>`
                 },
                 'D': {
                     css: 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50',
                     icon: 'ph-check-circle text-emerald-500',
-                    title: 'Mia 的分析：完美的血流動力學', 
-                    desc: 'Josh弟弟，這幾天的早晚落差幅度，完美符合健康生理時鐘的收斂區間。',
-                    advice: '<li>夜間血壓順利回落，給了心臟充分的休息時間。繼續保持！</li>'
+                    title: 'Mia 的分析：健康的晝夜節律 (Normal Dipper)',
+                    desc: `Josh弟弟，早晨均壓 (${avgMornSys}/${avgMornDia})，晚間均壓 (${avgEveSys}/${avgEveDia})，早晚落差 ${Math.abs(diff)} mmHg，符合正常生理節律的 10–20% 夜間回落，屬「Normal Dipper 型」。研究顯示此模式的長期心血管事件風險最低，代表自律神經調節良好，心臟獲得充分的夜間修復時間。`,
+                    advice: `<li><strong>持續規律量測：</strong>維持每天早晚固定時間量測，讓 Mia 持續追蹤長期趨勢，及早發現任何模式轉變。</li>
+                             <li><strong>守住睡眠節律：</strong>建議 23:00 前入睡、保持 7–8 小時睡眠，規律的睡眠是維持健康 Dipper 模式最重要的基礎，避免熬夜。</li>
+                             <li><strong>低鈉飲食守住成果：</strong>長期高鈉飲食是轉變為 Non-Dipper 的最主要風險因子，即使目前控制良好，每日鹽分攝取仍應維持在 5 公克以下。</li>`
                 }
             };
-            
-            box.className += map[mode].css; 
-            document.getElementById('trendIcon').innerHTML = `<i class="ph-fill ${map[mode].icon}"></i>`; 
-            document.getElementById('trendTitle').innerText = map[mode].title; 
-            document.getElementById('trendDesc').innerText = map[mode].desc; 
-            document.getElementById('trendActions').innerHTML = `<ul class="clinical-advice-list">${map[mode].advice}${hrAdvice}</ul>`;
+
+            box.className += map[mode].css;
+            document.getElementById('trendIcon').innerHTML = `<i class="ph-fill ${map[mode].icon}"></i>`;
+            document.getElementById('trendTitle').innerText = map[mode].title;
+            document.getElementById('trendDesc').innerText = map[mode].desc;
+            document.getElementById('trendActions').innerHTML = `<ul class="clinical-advice-list">${map[mode].advice}${sdWarning}${ppWarning}${hrAdvice}</ul>`;
         }
 
         function updateComplianceStatus() {
@@ -1395,7 +1593,20 @@
                 return; 
             }
             emptyStateUI.classList.add('hidden');
-            
+
+            if (isDoctorMode) {
+                const legend = document.createElement('div');
+                legend.className = 'flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2.5 mb-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800';
+                legend.innerHTML = `
+                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest w-full">血壓分級圖例 (ESH 2023)</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-emerald-50 border-l-4 border-l-emerald-500"></span><span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">正常 &lt;130/80</span></span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-amber-50 border-l-4 border-l-amber-400"></span><span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">一期 130–139 / 80–89</span></span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-rose-50 border-l-4 border-l-rose-400"></span><span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">二期 140–159 / 90–99</span></span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-red-50 border-l-4 border-l-red-500"></span><span class="text-[10px] font-bold text-red-600 dark:text-red-400">危機 ≥160 / ≥100</span></span>
+                `;
+                tableBody.appendChild(legend);
+            }
+
             const tzoffset = new Date().getTimezoneOffset() * 60000;
             const cutoffTime = new Date(Date.now() - tzoffset).getTime() - (90 * 86400000);
             
