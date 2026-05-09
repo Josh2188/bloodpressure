@@ -123,6 +123,60 @@
             line-height: 1.1;
             opacity: 0.9;
         }
+
+        /* 存檔成功打勾動畫 */
+        @keyframes save-check-pop {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            55% { transform: scale(1.15) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes save-check-fade {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -60%) scale(0.85); }
+        }
+        #saveCheckOverlay {
+            position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            z-index: 100; pointer-events: none;
+            width: 96px; height: 96px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; font-size: 56px;
+            box-shadow: 0 16px 40px rgba(16,185,129,0.45), 0 0 0 8px rgba(16,185,129,0.15);
+        }
+        #saveCheckOverlay.show {
+            animation: save-check-pop 0.36s cubic-bezier(0.34,1.56,0.64,1) forwards,
+                       save-check-fade 1.1s ease-out 0.36s forwards;
+        }
+
+        /* Hero 大數字儀表漸層（依血壓區間） */
+        .bp-tier-normal { background: linear-gradient(135deg, #10b981, #059669); }
+        .bp-tier-elevated { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .bp-tier-stage1 { background: linear-gradient(135deg, #fb923c, #f97316); }
+        .bp-tier-stage2 { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+        .bp-tier-crisis { background: linear-gradient(135deg, #dc2626, #991b1b); }
+
+        /* 趨勢卡微漸層底（依當前血壓區間） */
+        .trend-card-tint-normal { background: linear-gradient(180deg, rgba(16,185,129,0.06), transparent 65%); }
+        .trend-card-tint-elevated { background: linear-gradient(180deg, rgba(251,191,36,0.07), transparent 65%); }
+        .trend-card-tint-stage1 { background: linear-gradient(180deg, rgba(251,146,60,0.08), transparent 65%); }
+        .trend-card-tint-stage2 { background: linear-gradient(180deg, rgba(244,63,94,0.08), transparent 65%); }
+        .trend-card-tint-crisis { background: linear-gradient(180deg, rgba(220,38,38,0.10), transparent 65%); }
+
+        /* 連續異常警示卡呼吸動畫 */
+        @keyframes alert-breathe {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.25); }
+            50% { box-shadow: 0 0 0 6px rgba(244,63,94,0); }
+        }
+        #abnormalAlert.active { animation: alert-breathe 2.4s ease-in-out infinite; }
+
+        /* 空狀態插圖 */
+        @keyframes empty-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        #emptyState .empty-illust { animation: empty-float 3s ease-in-out infinite; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
@@ -174,6 +228,53 @@
             </div>
             <div id="doctorSummaryContent" class="grid grid-cols-2 gap-3">
                 <!-- 動態注入門診數據 -->
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- Hero 最新血壓大數字儀表 -->
+        <!-- ========================================== -->
+        <section id="latestReadingHero" class="hidden relative overflow-hidden rounded-2xl p-5 text-white shadow-md hide-in-doctor-mode transition-all duration-300 bp-tier-normal">
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-1.5 text-white/85 text-[11px] font-bold uppercase tracking-wider mb-0.5">
+                        <i class="ph-fill ph-heartbeat"></i>
+                        <span>最新一筆</span>
+                        <span id="latestHeroSlot" class="bg-white/20 px-1.5 py-px rounded text-[9px]"></span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span id="latestHeroSys" class="text-5xl font-black leading-none tracking-tight">--</span>
+                        <span class="text-2xl font-black opacity-70">/</span>
+                        <span id="latestHeroDia" class="text-3xl font-black leading-none">--</span>
+                        <span class="text-[10px] font-bold opacity-75 ml-1">mmHg</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1.5 text-[11px] font-medium text-white/85">
+                        <span id="latestHeroHr" class="flex items-center gap-1"><i class="ph-fill ph-pulse"></i><span>--</span> bpm</span>
+                        <span class="opacity-50">·</span>
+                        <span id="latestHeroAgo">剛剛</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1.5">
+                    <span id="latestHeroTier" class="text-xs font-black px-3 py-1 rounded-full bg-white/25 backdrop-blur-sm">--</span>
+                    <span id="latestHeroMed" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 flex items-center gap-1"><i class="ph-fill ph-pill"></i>已服藥</span>
+                </div>
+            </div>
+            <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-10 -bottom-10 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 連續異常警示卡 -->
+        <!-- ========================================== -->
+        <section id="abnormalAlert" class="hidden rounded-2xl p-3.5 hide-in-doctor-mode transition-all duration-300 border-2 border-rose-300 dark:border-rose-700/60 bg-rose-50 dark:bg-rose-900/20">
+            <div class="flex gap-3 items-start">
+                <div class="flex-shrink-0 w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md">
+                    <i class="ph-fill ph-warning-octagon text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 id="abnormalAlertTitle" class="text-sm font-black text-rose-700 dark:text-rose-300 mb-0.5">血壓持續偏高</h3>
+                    <p id="abnormalAlertDesc" class="text-[11px] leading-relaxed text-rose-600 dark:text-rose-400 font-medium"></p>
+                </div>
             </div>
         </section>
 
@@ -298,7 +399,7 @@
         <!-- ========================================== -->
         <!-- 近期趨勢折線圖 -->
         <!-- ========================================== -->
-        <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
+        <section id="trendCard" class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-trend-up text-indigo-500 text-lg"></i>
@@ -352,16 +453,26 @@
                 <div id="loadMoreContainer" class="px-2 pb-2"></div>
 
                 <!-- 空狀態顯示 -->
-                <div id="emptyState" class="hidden py-8 text-center flex flex-col items-center justify-center">
-                    <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-full mb-2 text-slate-300 dark:text-slate-600">
-                        <i class="ph-fill ph-folder-open text-3xl"></i>
+                <div id="emptyState" class="hidden py-10 text-center flex flex-col items-center justify-center">
+                    <div class="empty-illust relative w-28 h-28 mb-3">
+                        <div class="absolute inset-0 rounded-full bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30"></div>
+                        <div class="absolute inset-3 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center shadow-inner">
+                            <i class="ph-fill ph-heartbeat text-4xl text-rose-400"></i>
+                        </div>
+                        <div class="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs shadow-lg">
+                            <i class="ph-fill ph-sparkle"></i>
+                        </div>
                     </div>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">還沒有資料耶</p>
+                    <p class="text-slate-700 dark:text-slate-200 text-sm font-bold mb-1">還沒有任何紀錄</p>
+                    <p class="text-slate-400 dark:text-slate-500 text-xs font-medium leading-relaxed px-6">在上方輸入框直接盲打<br/>例如 <span class="font-mono font-bold text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded">12080</span> 就能存進收縮 / 舒張壓</p>
                 </div>
             </div>
         </section>
 
     </main>
+
+    <!-- 存檔成功動畫 overlay -->
+    <div id="saveCheckOverlay" class="hidden"><i class="ph-bold ph-check"></i></div>
 
     <!-- ========================================== -->
     <!-- 進階儀表板 Modal -->
@@ -525,6 +636,8 @@
                     closeAdvancedDashboard();
                 }
             });
+
+            scheduleNextNotification();
         };
 
         function getSwalConfig() { 
@@ -803,14 +916,199 @@
         // =========================================
         // [DOM 互動與表單處理層] UI Handlers
         // =========================================
-        function updateUI() { 
-            const representativeRecords = getRepresentativeRecords(); 
-            updateComplianceStatus(); 
-            updateTrendAnalysis(representativeRecords); 
-            updateDoctorSummary(representativeRecords); 
-            renderChart(representativeRecords); 
-            renderTable(representativeRecords); 
-            checkBackupStatus(); 
+        // 血壓區間判定（給 Hero、趨勢卡漸層、警示用）
+        function getBpTierKey(sys, dia) {
+            if (sys >= 160 || dia >= 100) return 'crisis';
+            if (sys >= 140 || dia >= 90) return 'stage2';
+            if (sys >= 130 || dia >= 80) return 'stage1';
+            if (sys >= 120) return 'elevated';
+            return 'normal';
+        }
+        const TIER_META = {
+            crisis:   { label: '危機 ≥160/100', heroClass: 'bp-tier-crisis',   tintClass: 'trend-card-tint-crisis' },
+            stage2:   { label: '二期高壓',       heroClass: 'bp-tier-stage2',   tintClass: 'trend-card-tint-stage2' },
+            stage1:   { label: '一期高壓',       heroClass: 'bp-tier-stage1',   tintClass: 'trend-card-tint-stage1' },
+            elevated: { label: '偏高 120–129',   heroClass: 'bp-tier-elevated', tintClass: 'trend-card-tint-elevated' },
+            normal:   { label: '正常',           heroClass: 'bp-tier-normal',   tintClass: 'trend-card-tint-normal' }
+        };
+
+        function formatTimeAgo(ts) {
+            const diff = Date.now() - ts;
+            const m = Math.floor(diff / 60000);
+            if (m < 1) return '剛剛';
+            if (m < 60) return `${m} 分鐘前`;
+            const h = Math.floor(m / 60);
+            if (h < 24) return `${h} 小時前`;
+            const d = Math.floor(h / 24);
+            return `${d} 天前`;
+        }
+
+        function updateLatestHero() {
+            const heroEl = document.getElementById('latestReadingHero');
+            if (!heroEl) return;
+            if (bpRecords.length === 0) {
+                heroEl.classList.add('hidden');
+                return;
+            }
+            const latest = [...bpRecords].sort((a, b) => b.timestamp - a.timestamp)[0];
+            const tierKey = getBpTierKey(latest.sys, latest.dia);
+            const meta = TIER_META[tierKey];
+
+            ['bp-tier-crisis','bp-tier-stage2','bp-tier-stage1','bp-tier-elevated','bp-tier-normal']
+                .forEach(c => heroEl.classList.remove(c));
+            heroEl.classList.add(meta.heroClass);
+            heroEl.classList.remove('hidden');
+
+            document.getElementById('latestHeroSys').textContent = latest.sys;
+            document.getElementById('latestHeroDia').textContent = latest.dia;
+            document.getElementById('latestHeroSlot').textContent = latest.timeSlot === '早' ? '早晨' : '晚間';
+            const hrEl = document.getElementById('latestHeroHr');
+            hrEl.querySelector('span').textContent = latest.hr !== null ? latest.hr : '--';
+            document.getElementById('latestHeroAgo').textContent = formatTimeAgo(latest.timestamp);
+            document.getElementById('latestHeroTier').textContent = meta.label;
+            document.getElementById('latestHeroMed').classList.toggle('hidden', !latest.medicated);
+        }
+
+        function updateAbnormalAlert() {
+            const alertEl = document.getElementById('abnormalAlert');
+            if (!alertEl) return;
+            const titleEl = document.getElementById('abnormalAlertTitle');
+            const descEl = document.getElementById('abnormalAlertDesc');
+
+            // 取最近 5 天的代表性紀錄
+            const reps = getRepresentativeRecords();
+            const recent = reps.slice(0, 6);
+            if (recent.length < 3) {
+                alertEl.classList.add('hidden');
+                alertEl.classList.remove('active');
+                return;
+            }
+
+            const last3 = recent.slice(0, 3);
+            const allCrisis = last3.every(r => r.sys >= 160 || r.dia >= 100);
+            const allStage2Plus = last3.every(r => r.sys >= 140 || r.dia >= 90);
+            const recent5 = recent.slice(0, 5);
+            const avgSys = recent5.reduce((s, r) => s + r.sys, 0) / recent5.length;
+            const avgDia = recent5.reduce((s, r) => s + r.dia, 0) / recent5.length;
+
+            let title = '', desc = '';
+            if (allCrisis) {
+                title = '⚠️ 連續 3 次達危機值';
+                desc = `近 3 次量測均 ≥160/100 mmHg，建議立即就醫評估，勿延遲。`;
+            } else if (allStage2Plus) {
+                title = '血壓持續達二期高血壓';
+                desc = `近 3 次量測均 ≥140/90 mmHg。建議於一週內回診，並注意低鹽飲食、規律服藥。`;
+            } else if (avgSys >= 135 || avgDia >= 85) {
+                title = '近期平均偏高';
+                desc = `近 ${recent5.length} 次平均 ${avgSys.toFixed(0)}/${avgDia.toFixed(0)} mmHg，已超過居家血壓 135/85 標準。建議檢視作息與用藥。`;
+            } else {
+                alertEl.classList.add('hidden');
+                alertEl.classList.remove('active');
+                return;
+            }
+
+            titleEl.textContent = title;
+            descEl.textContent = desc;
+            alertEl.classList.remove('hidden');
+            alertEl.classList.add('active');
+        }
+
+        function updateTrendCardTint() {
+            const card = document.getElementById('trendCard');
+            if (!card) return;
+            ['trend-card-tint-crisis','trend-card-tint-stage2','trend-card-tint-stage1','trend-card-tint-elevated','trend-card-tint-normal']
+                .forEach(c => card.classList.remove(c));
+            if (bpRecords.length === 0) return;
+            const reps = getRepresentativeRecords().slice(0, 7);
+            if (reps.length === 0) return;
+            const avgSys = reps.reduce((s, r) => s + r.sys, 0) / reps.length;
+            const avgDia = reps.reduce((s, r) => s + r.dia, 0) / reps.length;
+            card.classList.add(TIER_META[getBpTierKey(avgSys, avgDia)].tintClass);
+        }
+
+        function showSaveSuccessAnim() {
+            const overlay = document.getElementById('saveCheckOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('hidden', 'show');
+            void overlay.offsetWidth; // force reflow
+            overlay.classList.add('show');
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                overlay.classList.add('hidden');
+            }, 1500);
+        }
+
+        function hapticFeedback(pattern = 30) {
+            if (navigator.vibrate) {
+                try { navigator.vibrate(pattern); } catch (e) {}
+            }
+        }
+
+        function showCrisisAlert(sys, dia) {
+            return Swal.fire({
+                ...getSwalConfig(),
+                icon: 'warning',
+                title: '⚠️ 血壓達危機等級',
+                html: `
+                    <div class="text-left">
+                        <div class="text-3xl font-black text-red-600 mb-2 text-center">${sys} / ${dia} <span class="text-sm font-medium opacity-70">mmHg</span></div>
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-xs leading-relaxed">
+                            <div class="font-bold text-red-700 dark:text-red-300 mb-1">建議立即處理：</div>
+                            <ol class="list-decimal pl-4 space-y-1 text-red-600 dark:text-red-400">
+                                <li>坐下休息 5 分鐘後重新量測</li>
+                                <li>若仍 ≥160/100 且伴隨胸悶、頭痛、視力模糊，請立即就醫</li>
+                                <li>避免劇烈活動、咖啡因與情緒波動</li>
+                                <li>若有醫囑常備藥，依醫師指示服用</li>
+                            </ol>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: '我知道了',
+                confirmButtonColor: '#dc2626'
+            });
+        }
+
+        // 瀏覽器通知排程（App 開啟時生效）
+        let notifTimerId = null;
+        function scheduleNextNotification() {
+            if (notifTimerId) clearTimeout(notifTimerId);
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            if (localStorage.getItem('notifEnabled') !== '1') return;
+
+            const now = new Date();
+            const targets = [
+                { hour: 7, min: 0, title: '☀️ Mia 提醒', body: '早晨血壓量測時間到了' },
+                { hour: 21, min: 0, title: '🌙 Mia 提醒', body: '睡前血壓量測時間到了' }
+            ];
+            let nextDelay = Infinity;
+            let nextTarget = null;
+            targets.forEach(t => {
+                const tDate = new Date(now);
+                tDate.setHours(t.hour, t.min, 0, 0);
+                if (tDate <= now) tDate.setDate(tDate.getDate() + 1);
+                const delay = tDate - now;
+                if (delay < nextDelay) { nextDelay = delay; nextTarget = t; }
+            });
+            if (!nextTarget) return;
+            notifTimerId = setTimeout(() => {
+                try {
+                    new Notification(nextTarget.title, { body: nextTarget.body, icon: '', tag: 'mia-bp-reminder' });
+                } catch (e) {}
+                scheduleNextNotification();
+            }, Math.min(nextDelay, 2147483000));
+        }
+
+        function updateUI() {
+            const representativeRecords = getRepresentativeRecords();
+            updateLatestHero();
+            updateAbnormalAlert();
+            updateTrendCardTint();
+            updateComplianceStatus();
+            updateTrendAnalysis(representativeRecords);
+            updateDoctorSummary(representativeRecords);
+            renderChart(representativeRecords);
+            renderTable(representativeRecords);
+            checkBackupStatus();
         }
         
         window.processInput = function() {
@@ -846,20 +1144,31 @@
             
             const quality = evaluateQuality(validRecord.sys, validRecord.dia, validRecord.hr, validRecord.timeSlot, validRecord.medicated);
             
-            bpRecords.push(validRecord); 
-            saveLocalData(); 
-            
-            document.getElementById('inputData').value = ''; 
+            bpRecords.push(validRecord);
+            saveLocalData();
+
+            document.getElementById('inputData').value = '';
             resetMedicatedToggle();
-            
-            Swal.fire({
-                ...getSwalConfig(), 
-                icon: 'success', 
-                title: '存好囉！', 
-                html: `<span class="text-xs font-bold px-2 py-1 rounded border ${quality.style}">${quality.label}</span>`, 
-                timer: 1500, 
-                showConfirmButton: false
-            });
+
+            const isCrisis = validRecord.sys >= 160 || validRecord.dia >= 100;
+
+            if (isCrisis) {
+                hapticFeedback([60, 80, 60, 80, 60]);
+                showCrisisAlert(validRecord.sys, validRecord.dia);
+            } else {
+                hapticFeedback(30);
+                showSaveSuccessAnim();
+                Swal.fire({
+                    ...getSwalConfig(),
+                    toast: true,
+                    position: 'top',
+                    icon: 'success',
+                    title: '已存檔',
+                    html: `<span class="text-[11px] font-bold px-2 py-0.5 rounded border ${quality.style}">${quality.label}</span>`,
+                    timer: 1400,
+                    showConfirmButton: false
+                });
+            }
         };
 
         window.editRecord = function(id) {
@@ -2279,18 +2588,74 @@
             }); 
         }
         
-        window.setupReminders = function() { 
-            const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Josh BP Tracker//TW\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:☀️ Mia 提醒：早晨血壓量測\nDTSTART:20240101T080000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:☀️ Mia 提醒：早晨血壓量測\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nBEGIN:VEVENT\nSUMMARY:🌙 Mia 提醒：睡前血壓量測\nDTSTART:20240101T200000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:🌙 Mia 提醒：睡前血壓量測\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`; 
-            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' }); 
-            const url = URL.createObjectURL(blob); 
-            const a = document.createElement('a'); 
-            a.href = url; 
-            a.download = 'Mia_護心行動_每日提醒.ics'; 
-            document.body.appendChild(a); 
-            a.click(); 
-            document.body.removeChild(a); 
-            URL.revokeObjectURL(url); 
-            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '鬧鐘檔案做好了', text: 'Josh弟弟，點擊下載的檔案匯入手機行事曆，我每天就會準時叫你量血壓囉。' }); 
+        function downloadReminderICS() {
+            const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Josh BP Tracker//TW\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:☀️ Mia 提醒：早晨血壓量測\nDTSTART:20240101T080000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:☀️ Mia 提醒：早晨血壓量測\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nBEGIN:VEVENT\nSUMMARY:🌙 Mia 提醒：睡前血壓量測\nDTSTART:20240101T200000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:🌙 Mia 提醒：睡前血壓量測\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
+            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Mia_護心行動_每日提醒.ics';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '鬧鐘檔案做好了', text: '點擊下載的檔案匯入手機行事曆，每天會準時提醒量血壓。' });
+        }
+
+        async function enableBrowserNotification() {
+            if (!('Notification' in window)) {
+                return Swal.fire({ ...getSwalConfig(), icon: 'error', title: '不支援', text: '此裝置或瀏覽器不支援通知。建議改用行事曆檔案。' });
+            }
+            let perm = Notification.permission;
+            if (perm === 'default') perm = await Notification.requestPermission();
+            if (perm !== 'granted') {
+                return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '通知未開啟', text: '請至瀏覽器或系統設定開啟通知權限。' });
+            }
+            localStorage.setItem('notifEnabled', '1');
+            scheduleNextNotification();
+            Swal.fire({ ...getSwalConfig(), icon: 'success', title: '通知已開啟', text: '每日 07:00 與 21:00 會提醒量測（需保持 App 在背景開啟）。', timer: 2200, showConfirmButton: false });
+        }
+
+        function disableBrowserNotification() {
+            localStorage.setItem('notifEnabled', '0');
+            if (notifTimerId) { clearTimeout(notifTimerId); notifTimerId = null; }
+            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '通知已關閉', timer: 1400, showConfirmButton: false });
+        }
+
+        window.setupReminders = function() {
+            const notifOn = localStorage.getItem('notifEnabled') === '1' && ('Notification' in window) && Notification.permission === 'granted';
+            Swal.fire({
+                ...getSwalConfig(),
+                title: '設定每日提醒',
+                html: `
+                    <div class="flex flex-col gap-3 mt-2 text-left">
+                        <button id="btnNotifToggle" class="w-full px-4 py-3 rounded-xl border-2 ${notifOn ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900'} flex items-start gap-3 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            <i class="ph-fill ph-bell-ringing text-2xl ${notifOn ? 'text-emerald-500' : 'text-indigo-500'} mt-0.5"></i>
+                            <div class="flex-1">
+                                <div class="text-sm font-bold flex items-center gap-2">瀏覽器通知 ${notifOn ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-white">已開啟</span>' : ''}</div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">07:00 與 21:00 自動推播。Android PWA 體驗最佳，需保留 App 在背景。</div>
+                            </div>
+                        </button>
+                        <button id="btnIcs" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-start gap-3 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            <i class="ph-fill ph-calendar-plus text-2xl text-rose-500 mt-0.5"></i>
+                            <div class="flex-1">
+                                <div class="text-sm font-bold">行事曆檔案 (.ics)</div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">下載後匯入手機行事曆，最穩定，iOS/Android 通用。</div>
+                            </div>
+                        </button>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCloseButton: true,
+                didOpen: () => {
+                    document.getElementById('btnNotifToggle').addEventListener('click', () => {
+                        Swal.close();
+                        if (notifOn) disableBrowserNotification();
+                        else enableBrowserNotification();
+                    });
+                    document.getElementById('btnIcs').addEventListener('click', () => {
+                        Swal.close();
+                        downloadReminderICS();
+                    });
+                }
+            });
         };
     </script>
 </body>
