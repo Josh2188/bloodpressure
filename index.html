@@ -2205,12 +2205,15 @@
                     const dateHeader = document.createElement('div');
                     if (isDoctorMode) {
                         const [yyyy, mm, dd] = record.date.split('-');
-                        dateHeader.className = `flex items-center gap-2 px-3 py-2 mb-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border-l-4 border-indigo-400 ${dayIndex > 0 ? 'mt-5' : 'mt-1'}`;
+                        dateHeader.className = `flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-indigo-600 dark:bg-indigo-700 shadow-sm ${dayIndex > 0 ? 'mt-6' : 'mt-1'}`;
                         dateHeader.innerHTML = `
-                            <i class="ph-fill ph-calendar-blank text-indigo-500 text-base"></i>
-                            <span class="text-base font-black text-slate-700 dark:text-slate-200 tracking-wide">${yyyy}-${mm}-${dd}</span>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">週${weekdays[dateObj.getDay()]}</span>
-                            ${isToday ? '<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-rose-500 text-white">今日</span>' : ''}
+                            <div class="flex items-baseline gap-1 text-white">
+                                <span class="text-2xl font-black leading-none tracking-tight">${parseInt(mm)}/${parseInt(dd)}</span>
+                                <span class="text-xs font-bold opacity-75 ml-1">${yyyy}</span>
+                            </div>
+                            <span class="text-sm font-black px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-sm">週${weekdays[dateObj.getDay()]}</span>
+                            ${isToday ? '<span class="text-xs font-black px-2 py-1 rounded-lg bg-rose-500 text-white shadow-sm">今日</span>' : ''}
+                            <div class="flex-1"></div>
                         `;
                     } else {
                         dateHeader.className = 'flex items-center gap-2 px-3 pt-3 pb-1';
