@@ -518,6 +518,13 @@
                     applyTheme();
                 }
             });
+
+            window.addEventListener('popstate', (e) => {
+                const dashboard = document.getElementById('advancedDashboard');
+                if (!dashboard.classList.contains('hidden')) {
+                    closeAdvancedDashboard();
+                }
+            });
         };
 
         function getSwalConfig() { 
@@ -1004,17 +1011,26 @@
             }); 
         };
 
-        window.toggleAdvancedDashboard = function() { 
-            const dashboard = document.getElementById('advancedDashboard'); 
-            if (dashboard.classList.contains('hidden')) { 
-                dashboard.classList.remove('hidden'); 
-                document.body.classList.add('modal-open'); 
-                setTimeout(() => { dashboard.classList.remove('opacity-0'); window.renderAdvancedCharts(); }, 10); 
-            } else { 
-                dashboard.classList.add('opacity-0'); 
-                document.body.classList.remove('modal-open'); 
-                setTimeout(() => { dashboard.classList.add('hidden'); }, 300); 
-            } 
+        function closeAdvancedDashboard() {
+            const dashboard = document.getElementById('advancedDashboard');
+            if (!dashboard.classList.contains('hidden')) {
+                dashboard.classList.add('opacity-0');
+                document.body.classList.remove('modal-open');
+                setTimeout(() => { dashboard.classList.add('hidden'); }, 300);
+            }
+        }
+
+        window.toggleAdvancedDashboard = function() {
+            const dashboard = document.getElementById('advancedDashboard');
+            if (dashboard.classList.contains('hidden')) {
+                history.pushState({ page: 'advanced' }, '');
+                dashboard.classList.remove('hidden');
+                document.body.classList.add('modal-open');
+                setTimeout(() => { dashboard.classList.remove('opacity-0'); window.renderAdvancedCharts(); }, 10);
+            } else {
+                closeAdvancedDashboard();
+                if (history.state && history.state.page === 'advanced') history.back();
+            }
         };
         
         // =========================================
