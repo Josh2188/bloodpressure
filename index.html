@@ -281,6 +281,34 @@
         </section>
 
         <!-- ========================================== -->
+        <!-- 主畫面總覽統計卡 -->
+        <!-- ========================================== -->
+        <section id="overviewStatsCard" class="hidden bg-white dark:bg-slate-900 rounded-2xl p-3 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode">
+            <div class="flex items-center gap-1.5 mb-2 px-1">
+                <i class="ph-fill ph-chart-bar text-amber-500 text-base"></i>
+                <h3 class="text-xs font-black tracking-wider text-slate-500 dark:text-slate-400 uppercase">累積總覽</h3>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5">
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 text-center border border-slate-100 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-database text-slate-400"></i> 總筆數</div>
+                    <div class="text-base font-black text-slate-700 dark:text-slate-200" id="statsTotal">--</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 text-center border border-slate-100 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-equals text-emerald-500"></i> 平均</div>
+                    <div class="text-base font-black text-emerald-600 dark:text-emerald-400" id="statsAvg">--</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 text-center border border-slate-100 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-arrow-up text-rose-500"></i> 最高</div>
+                    <div class="text-base font-black text-rose-600 dark:text-rose-400" id="statsMax">--</div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 text-center border border-slate-100 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-arrow-down text-indigo-500"></i> 最低</div>
+                    <div class="text-base font-black text-indigo-600 dark:text-indigo-400" id="statsMin">--</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
         <!-- 一般模式：近七日血壓熱度條 (Design A) -->
         <!-- ========================================== -->
         <section id="streakCard" class="relative overflow-hidden rounded-2xl p-4 text-white hide-in-doctor-mode transition-all duration-300 shadow-sm cursor-pointer active:opacity-90" onclick="window.showStreakModal()">
@@ -445,9 +473,15 @@
         <!-- 詳細紀錄列表 -->
         <!-- ========================================== -->
         <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-transparent dark:border-slate-800 overflow-hidden transition-colors duration-300">
-            <div class="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center gap-1.5">
-                <i class="ph-fill ph-list-bullets text-slate-400 dark:text-slate-500 text-lg"></i>
-                <h2 class="text-base font-bold">詳細紀錄</h2>
+            <div class="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-list-bullets text-slate-400 dark:text-slate-500 text-lg"></i>
+                    <h2 class="text-base font-bold">詳細紀錄</h2>
+                    <span id="recordsFilteredCount" class="text-[10px] font-bold text-slate-400 ml-1"></span>
+                </div>
+                <select id="monthFilter" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 outline-none focus:border-indigo-400 cursor-pointer">
+                    <option value="all">全部月份</option>
+                </select>
             </div>
             
             <div class="p-2 bg-white dark:bg-slate-900">
@@ -643,7 +677,16 @@
                 }
             });
 
+            const monthFilterEl = document.getElementById('monthFilter');
+            if (monthFilterEl) {
+                monthFilterEl.addEventListener('change', (e) => {
+                    currentMonthFilter = e.target.value;
+                    renderTable(getRepresentativeRecords());
+                });
+            }
+
             scheduleNextNotification();
+            setTimeout(() => showOnboarding(), 400);
         };
 
         function getSwalConfig() { 
@@ -1104,11 +1147,152 @@
             }, Math.min(nextDelay, 2147483000));
         }
 
+        // 主畫面累積總覽
+        function updateOverviewStats() {
+            const card = document.getElementById('overviewStatsCard');
+            if (!card) return;
+            if (bpRecords.length < 5) { card.classList.add('hidden'); return; }
+            card.classList.remove('hidden');
+            const total = bpRecords.length;
+            const avgSys = Math.round(bpRecords.reduce((s, r) => s + r.sys, 0) / total);
+            const avgDia = Math.round(bpRecords.reduce((s, r) => s + r.dia, 0) / total);
+            const maxRec = bpRecords.reduce((a, b) => b.sys > a.sys ? b : a);
+            const minRec = bpRecords.reduce((a, b) => b.sys < a.sys ? b : a);
+            document.getElementById('statsTotal').textContent = total;
+            document.getElementById('statsAvg').innerHTML = `${avgSys}<span class="text-[10px] opacity-60">/</span>${avgDia}`;
+            document.getElementById('statsMax').innerHTML = `${maxRec.sys}<span class="text-[10px] opacity-60">/</span>${maxRec.dia}`;
+            document.getElementById('statsMin').innerHTML = `${minRec.sys}<span class="text-[10px] opacity-60">/</span>${minRec.dia}`;
+        }
+
+        // 月份篩選
+        let currentMonthFilter = 'all';
+        function populateMonthFilter() {
+            const sel = document.getElementById('monthFilter');
+            if (!sel) return;
+            const months = [...new Set(bpRecords.map(r => r.date.slice(0, 7)))].sort().reverse();
+            const prev = sel.value || 'all';
+            sel.innerHTML = '<option value="all">全部月份</option>' +
+                months.map(m => `<option value="${m}">${m.replace('-', ' / ')}</option>`).join('');
+            if (months.includes(prev) || prev === 'all') sel.value = prev;
+            else { sel.value = 'all'; currentMonthFilter = 'all'; }
+        }
+
+        // 連續天數
+        function calculateCurrentStreak() {
+            const datesSet = new Set(bpRecords.map(r => r.date));
+            let streak = 0;
+            const today = new Date();
+            for (let i = 0; i < 365; i++) {
+                const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+                const ds = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+                if (datesSet.has(ds)) streak++;
+                else if (i === 0) continue;
+                else break;
+            }
+            return streak;
+        }
+
+        // 里程碑慶祝
+        const TOTAL_MILESTONES = [10, 30, 100, 365, 1000];
+        const STREAK_MILESTONES = [7, 14, 30, 60, 100];
+        function checkMilestones() {
+            const triggered = JSON.parse(localStorage.getItem('milestones') || '[]');
+            const newOnes = [];
+            TOTAL_MILESTONES.forEach(n => {
+                if (bpRecords.length >= n && !triggered.includes(`total-${n}`)) newOnes.push({ type: 'total', n, id: `total-${n}` });
+            });
+            const streak = calculateCurrentStreak();
+            STREAK_MILESTONES.forEach(n => {
+                if (streak >= n && !triggered.includes(`streak-${n}`)) newOnes.push({ type: 'streak', n, id: `streak-${n}` });
+            });
+            if (newOnes.length === 0) return;
+            const m = newOnes[0];
+            triggered.push(m.id);
+            localStorage.setItem('milestones', JSON.stringify(triggered));
+            const icon = m.type === 'streak' ? 'ph-flame' : 'ph-trophy';
+            const colorBg = m.type === 'streak'
+                ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+                : 'linear-gradient(135deg, #10b981, #6366f1)';
+            const title = m.type === 'streak'
+                ? `🔥 連續量測 ${m.n} 天！`
+                : `🏆 累積 ${m.n} 筆紀錄！`;
+            const msg = m.type === 'streak'
+                ? '持之以恆是控壓的關鍵，繼續保持！'
+                : '感謝你認真記錄每一筆，數據愈多分析愈準確。';
+            setTimeout(() => {
+                Swal.fire({
+                    ...getSwalConfig(),
+                    html: `
+                        <div class="flex flex-col items-center py-2">
+                            <div class="w-20 h-20 rounded-full flex items-center justify-center mb-3 shadow-lg" style="background:${colorBg}">
+                                <i class="ph-fill ${icon} text-4xl text-white"></i>
+                            </div>
+                            <div class="text-lg font-black mb-1">${title}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed text-center px-3">${msg}</div>
+                        </div>
+                    `,
+                    confirmButtonText: '太棒了',
+                    confirmButtonColor: '#10b981',
+                    showClass: { popup: 'animate__animated animate__zoomIn' }
+                });
+                hapticFeedback([60, 50, 60, 50, 120]);
+            }, 600);
+        }
+
+        // 首次使用引導
+        async function showOnboarding() {
+            if (localStorage.getItem('onboarded') === '1') return;
+            const steps = [
+                {
+                    icon: 'ph-hand-waving',
+                    title: '嗨，我是 Mia',
+                    body: '我會幫你記錄每天的血壓、分析趨勢，並提醒你回診與服藥。先用 30 秒帶你看完三件事就好。'
+                },
+                {
+                    icon: 'ph-clipboard-text',
+                    title: '722 居家量測規範',
+                    body: '<strong class="text-rose-500">7</strong> 天連續量測｜每天 <strong class="text-rose-500">2</strong> 次（早起後、睡前）｜每次連量 <strong class="text-rose-500">2</strong> 回取平均。<br/><br/>這是台灣高血壓學會建議的標準流程。'
+                },
+                {
+                    icon: 'ph-keyboard',
+                    title: '盲打輸入超快速',
+                    body: '不用切換欄位，直接連打數字：<br/><br/><span class="font-mono font-bold text-2xl text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded">12080 75</span><br/><br/>系統會自動拆成 收縮 120 / 舒張 80 / 心率 75。'
+                }
+            ];
+            for (let i = 0; i < steps.length; i++) {
+                const s = steps[i];
+                const dots = steps.map((_, j) => `<span class="inline-block w-2 h-2 rounded-full mx-0.5 ${j === i ? 'bg-rose-500' : 'bg-slate-300 dark:bg-slate-700'}"></span>`).join('');
+                const result = await Swal.fire({
+                    ...getSwalConfig(),
+                    html: `
+                        <div class="flex flex-col items-center py-2">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center mb-3 shadow-md">
+                                <i class="ph-fill ${s.icon} text-3xl text-white"></i>
+                            </div>
+                            <div class="text-lg font-black mb-2">${s.title}</div>
+                            <div class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed text-center px-2">${s.body}</div>
+                            <div class="mt-4">${dots}</div>
+                        </div>
+                    `,
+                    confirmButtonText: i === steps.length - 1 ? '開始使用' : '下一步',
+                    showCancelButton: i === 0,
+                    cancelButtonText: '跳過',
+                    confirmButtonColor: '#e11d48',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+                if (result.dismiss === Swal.DismissReason.cancel) break;
+            }
+            localStorage.setItem('onboarded', '1');
+        }
+
         function updateUI() {
             const representativeRecords = getRepresentativeRecords();
             updateLatestHero();
             updateAbnormalAlert();
             updateTrendCardTint();
+            updateOverviewStats();
+            populateMonthFilter();
             updateComplianceStatus();
             updateTrendAnalysis(representativeRecords);
             updateDoctorSummary(representativeRecords);
@@ -1174,6 +1358,7 @@
                     timer: 1400,
                     showConfirmButton: false
                 });
+                setTimeout(() => checkMilestones(), 1500);
             }
         };
 
@@ -2146,16 +2331,25 @@
         }
 
         function renderTable(recordsData) {
-            const tableBody = document.getElementById('historyTableBody'); 
+            const tableBody = document.getElementById('historyTableBody');
             const loadMoreBtnContainer = document.getElementById('loadMoreContainer');
             const emptyStateUI = document.getElementById('emptyState');
-            
-            tableBody.innerHTML = ''; 
+            const filteredCountEl = document.getElementById('recordsFilteredCount');
+
+            tableBody.innerHTML = '';
             loadMoreBtnContainer.innerHTML = '';
-            
-            if (!recordsData || recordsData.length === 0) { 
-                emptyStateUI.classList.remove('hidden'); 
-                return; 
+
+            // 月份篩選
+            if (currentMonthFilter && currentMonthFilter !== 'all' && recordsData) {
+                recordsData = recordsData.filter(r => r.date.startsWith(currentMonthFilter));
+            }
+            if (filteredCountEl) {
+                filteredCountEl.textContent = (currentMonthFilter !== 'all' && recordsData) ? `(${recordsData.length})` : '';
+            }
+
+            if (!recordsData || recordsData.length === 0) {
+                emptyStateUI.classList.remove('hidden');
+                return;
             }
             emptyStateUI.classList.add('hidden');
 
