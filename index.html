@@ -179,6 +179,101 @@
             50% { transform: translateY(-6px); }
         }
         #emptyState .empty-illust { animation: empty-float 3s ease-in-out infinite; }
+
+        /* ===== 質感優化（不動結構） ===== */
+
+        /* 數字一律 tabular-nums，避免不同數字寬度跳動 */
+        body { font-feature-settings: "tnum" 1, "cv11" 1; }
+
+        /* 卡片柔和雙層陰影 — 取代 shadow-sm */
+        .shadow-sm,
+        section.shadow-sm {
+            box-shadow:
+                0 1px 2px rgba(15, 23, 42, 0.04),
+                0 4px 12px -2px rgba(15, 23, 42, 0.04) !important;
+        }
+        .dark .shadow-sm,
+        .dark section.shadow-sm {
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.3),
+                0 4px 16px -4px rgba(0, 0, 0, 0.25) !important;
+        }
+
+        /* 整體卡片邊框 — 改用更輕的 hairline */
+        section.rounded-2xl {
+            border-color: rgba(15, 23, 42, 0.04);
+        }
+        .dark section.rounded-2xl {
+            border-color: rgba(255, 255, 255, 0.04);
+        }
+
+        /* 頂部 header 玻璃毛感強化 */
+        header.sticky {
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+        }
+        header.sticky {
+            background-color: rgba(255, 255, 255, 0.72) !important;
+        }
+        .dark header.sticky {
+            background-color: rgba(15, 23, 42, 0.72) !important;
+        }
+
+        /* 章節標題 — 圖示放進淡色圓角徽章 */
+        section h2 i[class*="ph-"]:first-child,
+        section h3 i[class*="ph-"]:first-child {
+            /* 不破壞 layout，只是 fallback */
+        }
+
+        /* 輸入框 focus 更俐落 */
+        #inputData:focus {
+            box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.12);
+        }
+
+        /* 細部字體 — 章節標題稍微縮一點、字距打開 */
+        section h2.font-bold {
+            letter-spacing: 0.005em;
+        }
+
+        /* 按鈕互動微感 — 統一所有 active:scale 體驗 */
+        button, label[class*="cursor-pointer"] {
+            transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+        }
+
+        /* 詳細紀錄列表分隔線輕量化 */
+        #historyTableBody > div {
+            border-color: rgba(15, 23, 42, 0.05);
+        }
+        .dark #historyTableBody > div {
+            border-color: rgba(255, 255, 255, 0.04);
+        }
+
+        /* 數字密度感 — 為大數字加上 tabular-nums + 緊縮字距 */
+        #latestHeroSys, #latestHeroDia, #latestHeroHr,
+        #statsTotal, #statsAvg, #statsMax, #statsMin,
+        #morningAvgDisplay, #eveningAvgDisplay,
+        #ppAvgDisplay, #bpvSdDisplay, #recordCountDisplay,
+        #medValue, #hrValue, #medOnAvg, #medOffAvg, #medDelta {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.01em;
+        }
+
+        /* 平滑滾動 */
+        html { scroll-behavior: smooth; }
+
+        /* 選取色 */
+        ::selection { background: rgba(244, 63, 94, 0.18); }
+        .dark ::selection { background: rgba(244, 63, 94, 0.3); }
+
+        /* 小指標徽章漸層底（取代純色塊） */
+        #latestHeroTier {
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+
+        /* 進度條更精緻 */
+        #adherenceBar {
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
