@@ -598,8 +598,9 @@
                     <canvas id="dipRateChart"></canvas>
                 </div>
                 <div class="flex flex-wrap gap-3 mt-2 text-[10px] font-bold text-slate-400">
+                    <span><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#991b1b"></span>&nbsp;反勺型 &lt;0%</span>
+                    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-rose-400 mr-1"></span>不降型 0–10%</span>
                     <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-400 mr-1"></span>正常 10–20%</span>
-                    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-rose-400 mr-1"></span>不降型 &lt;10%</span>
                     <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-400 mr-1"></span>極端降 &gt;20%</span>
                 </div>
                 <div id="dipRateDetail" class="mt-3"></div>
@@ -965,6 +966,61 @@
         // =========================================
         // [DOM 互動與表單處理層] UI Handlers
         // =========================================
+        // ====================================================
+        // 夜間降壓型態分類器（共用，主畫面與進階報表都呼叫此函式）
+        // 依據 ESH 2023 / AHA 2020 標準，使用百分比降壓率：
+        //   降壓率 = (早晨 SBP − 晚間 SBP) / 早晨 SBP × 100%
+        //   reverse  < 0%      反勺型（夜間反而升高，風險最高）
+        //   non      0–10%     不降型 Non-Dipper
+        //   normal   10–20%    正常 Normal Dipper（理想）
+        //   extreme  > 20%     極端降壓 Extreme Dipper
+        // 取近 14 個「早晚皆有量測」的配對日，分類後找主導型態
+        // 主導判定的優先序：reverse > non > extreme > normal
+        // （臨床嚴重度遞減，遇到同票數選較危險者，避免低估風險）
+        // ====================================================
+        function classifyDippingPattern(reps) {
+            const byDate = {};
+            (reps || []).forEach(r => {
+                if (!byDate[r.date]) byDate[r.date] = {};
+                byDate[r.date][r.timeSlot] = r.sys;
+            });
+            const pairedDates = Object.keys(byDate)
+                .filter(d => byDate[d]['早'] != null && byDate[d]['晚'] != null)
+                .sort();
+            const allDaily = pairedDates.map(d => {
+                const m = byDate[d]['早'], e = byDate[d]['晚'];
+                return { date: d, pct: (m - e) / m * 100, morning: m, evening: e };
+            });
+            const recent = allDaily.slice(-14);
+            if (recent.length < 5) {
+                return { sufficient: false, pairedDays: recent.length, totalNeeded: 5, allDaily };
+            }
+            const counts = { reverse: 0, non: 0, normal: 0, extreme: 0 };
+            recent.forEach(d => {
+                if (d.pct < 0) counts.reverse++;
+                else if (d.pct < 10) counts.non++;
+                else if (d.pct <= 20) counts.normal++;
+                else counts.extreme++;
+            });
+            const avgPct = recent.reduce((s, d) => s + d.pct, 0) / recent.length;
+            // 臨床嚴重度排序：reverse > non > extreme > normal
+            // 同票數時取較嚴重者（不偏低估風險）
+            const priority = ['reverse', 'non', 'extreme', 'normal'];
+            let pattern = 'normal', maxCount = -1;
+            priority.forEach(k => {
+                if (counts[k] > maxCount) { maxCount = counts[k]; pattern = k; }
+            });
+            return {
+                sufficient: true,
+                pattern,
+                avgPct: Math.round(avgPct * 10) / 10,
+                counts,
+                sampleSize: recent.length,
+                recent,
+                allDaily
+            };
+        }
+
         // 血壓區間判定（給 Hero、趨勢卡漸層、警示用）
         function getBpTierKey(sys, dia) {
             if (sys >= 160 || dia >= 100) return 'crisis';
@@ -1947,61 +2003,71 @@
                 }
             });
 
-            // 8. 夜間降壓率趨勢 (Dipping Pattern)
+            // 8. 夜間降壓率趨勢 (Dipping Pattern) — 使用統一分類器（與主畫面同步）
             if (dipRateChart) dipRateChart.destroy();
-            const groupedForDip = {};
-            records.forEach(r => {
-                if (!groupedForDip[r.date]) groupedForDip[r.date] = {};
-                groupedForDip[r.date][r.timeSlot] = r.sys;
-            });
+            const dipResultAdv = classifyDippingPattern(records);
             const dipDates = [], dipRates = [], dipColors = [];
-            Object.keys(groupedForDip).sort().forEach(date => {
-                const day = groupedForDip[date];
-                if (day['早'] && day['晚']) {
-                    const rate = Math.round((day['早'] - day['晚']) / day['早'] * 100);
-                    dipDates.push(date.slice(5));
-                    dipRates.push(rate);
-                    dipColors.push(rate < 10 ? '#f43f5e' : rate > 20 ? '#3b82f6' : '#10b981');
-                }
+            (dipResultAdv.allDaily || []).forEach(d => {
+                dipDates.push(d.date.slice(5));
+                dipRates.push(Math.round(d.pct));
+                // 顏色與分類器一致：reverse 暗紅 / non 玫紅 / normal 綠 / extreme 藍
+                let color;
+                if (d.pct < 0) color = '#991b1b';
+                else if (d.pct < 10) color = '#f43f5e';
+                else if (d.pct <= 20) color = '#10b981';
+                else color = '#3b82f6';
+                dipColors.push(color);
             });
+            const dipRates_ = dipRates;  // 保留變數名以下文使用
 
             const dipSummaryEl = document.getElementById('dipPatternSummary');
             const dipDetailEl = document.getElementById('dipRateDetail');
-            if (dipRates.length >= 5) {
-                const recentDips = dipRates.slice(-14);
-                const nonDipperCount = recentDips.filter(r => r < 10).length;
-                const extremeDipCount = recentDips.filter(r => r > 20).length;
-                const normalDipCount = recentDips.length - nonDipperCount - extremeDipCount;
-                const avgDip = Math.round(recentDips.reduce((a, b) => a + b, 0) / recentDips.length);
-                const dominant = nonDipperCount >= extremeDipCount && nonDipperCount >= normalDipCount ? 'non'
-                               : extremeDipCount >= normalDipCount ? 'extreme' : 'normal';
+            if (dipResultAdv.sufficient) {
+                const c = dipResultAdv.counts;
+                const n = dipResultAdv.sampleSize;
+                const avgDip = dipResultAdv.avgPct;
+                const dominant = dipResultAdv.pattern;
+                const pct = (k) => Math.round(c[k] / n * 100);
 
                 let summaryCSS, summaryHTML, detailHTML;
-                if (dominant === 'non') {
+                if (dominant === 'reverse') {
+                    summaryCSS = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-300 border border-red-300 dark:border-red-800/50';
+                    summaryHTML = `<i class="ph-fill ph-skull mr-1"></i>近 ${n} 筆配對資料中，有 <strong>${c.reverse} 次（${pct('reverse')}%）</strong>屬「反勺型 Reverse Dipper」（夜間血壓不降反升），平均降壓率 <strong>${avgDip}%</strong>。這是所有夜間血壓型態中風險最高的一種，請務必於 1–2 週內回診評估。`;
+                    detailHTML = `
+                        <div class="text-xs leading-relaxed space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <p class="font-bold text-red-600 dark:text-red-400">Reverse Dipper 的臨床風險</p>
+                            <p class="text-slate-600 dark:text-slate-300">JAMA 2022 大型統合分析顯示，Reverse Dipper 的中風與心衰竭風險較 Normal Dipper 高 <strong>2.5–3 倍</strong>。此型常見於嚴重 OSA、晚期慢性腎病、自律神經失調（糖尿病晚期、帕金森氏症）、隱匿性心衰患者。</p>
+                            <p class="text-slate-600 dark:text-slate-300"><strong>處置順序：</strong>(1) 安排 PSG 排查 OSA；(2) 檢測 eGFR、尿白蛋白；(3) 評估心臟超音波；(4) 與醫師討論將降壓藥調整至睡前服用（HYGIA / MAPEC 證據）；(5) 嚴格限鹽 &lt;5g/日。</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">近 ${n} 天分布：反勺 ${c.reverse} / 不降 ${c.non} / 正常 ${c.normal} / 極端 ${c.extreme}</p>
+                        </div>`;
+                } else if (dominant === 'non') {
                     summaryCSS = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50';
-                    summaryHTML = `<i class="ph-fill ph-warning-octagon mr-1"></i>近 14 筆配對資料中，有 <strong>${nonDipperCount} 次（${Math.round(nonDipperCount/recentDips.length*100)}%）</strong>屬「不降型 Non-Dipper」，平均降壓率僅 <strong>${avgDip}%</strong>。夜間血壓持續未回落，心臟、腎臟及腦部長期承受高壓，請主動告知醫師。`;
+                    summaryHTML = `<i class="ph-fill ph-warning-octagon mr-1"></i>近 ${n} 筆配對資料中，有 <strong>${c.non} 次（${pct('non')}%）</strong>屬「不降型 Non-Dipper」，平均降壓率僅 <strong>${avgDip}%</strong>（正常 10–20%）。夜間血壓持續未回落，心臟、腎臟及腦部長期承受高壓，請主動告知醫師。`;
                     detailHTML = `
                         <div class="text-xs leading-relaxed space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <p class="font-bold text-rose-600 dark:text-rose-400">Non-Dipper 的臨床風險</p>
                             <p class="text-slate-600 dark:text-slate-300">21 年長期追蹤研究顯示，Non-Dipper 的心血管事件發生率高達 <strong>28%</strong>，遠高於正常 Dipper 的 6.6%。此模式與左心室肥厚、蛋白尿、動脈僵硬、以及腎功能惡化高度相關（ESH 2023）。</p>
                             <p class="text-slate-600 dark:text-slate-300"><strong>常見原因：</strong>高鹽飲食（最主要）、睡眠呼吸中止症 (OSA)、慢性腎病 (CKD)、自律神經失調。建議：嚴格限鹽（&lt;5g/日）、評估 OSA、定期檢測腎功能，並與醫師討論時間療法（Chronotherapy）。</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">近 ${n} 天分布：反勺 ${c.reverse} / 不降 ${c.non} / 正常 ${c.normal} / 極端 ${c.extreme}</p>
                         </div>`;
                 } else if (dominant === 'extreme') {
                     summaryCSS = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50';
-                    summaryHTML = `<i class="ph-fill ph-info mr-1"></i>近 14 筆配對資料中，有 <strong>${extremeDipCount} 次（${Math.round(extremeDipCount/recentDips.length*100)}%）</strong>屬「極端降壓型 Extreme Dipper」，平均降壓率 <strong>${avgDip}%</strong>（正常上限 20%）。`;
+                    summaryHTML = `<i class="ph-fill ph-info mr-1"></i>近 ${n} 筆配對資料中，有 <strong>${c.extreme} 次（${pct('extreme')}%）</strong>屬「極端降壓型 Extreme Dipper」，平均降壓率 <strong>${avgDip}%</strong>（正常上限 20%）。`;
                     detailHTML = `
                         <div class="text-xs leading-relaxed space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <p class="font-bold text-blue-600 dark:text-blue-400">Extreme Dipper 的臨床風險</p>
                             <p class="text-slate-600 dark:text-slate-300">AHA Hypertension 2020 研究顯示，65 歲以上患者此型心血管事件風險較 Normal Dipper 高 <strong>2–4 倍</strong>，機制為夜間相對低血壓導致心腦灌流不足，對合併動脈狹窄者尤其危險。年輕患者（&lt;65 歲）風險相對較低，但仍需觀察起床症狀。</p>
                             <p class="text-slate-600 dark:text-slate-300"><strong>建議：</strong>避免睡前服用強效降壓藥、睡前補充水分 200 ml、65 歲以上者若有晨起頭暈或視力模糊請立即就醫。</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">近 ${n} 天分布：反勺 ${c.reverse} / 不降 ${c.non} / 正常 ${c.normal} / 極端 ${c.extreme}</p>
                         </div>`;
                 } else {
                     summaryCSS = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50';
-                    summaryHTML = `<i class="ph-fill ph-check-circle mr-1"></i>近 14 筆配對資料中，有 <strong>${normalDipCount} 次（${Math.round(normalDipCount/recentDips.length*100)}%）</strong>屬「正常降壓型 Normal Dipper」，平均降壓率 <strong>${avgDip}%</strong>，心血管保護機制運作良好。`;
+                    summaryHTML = `<i class="ph-fill ph-check-circle mr-1"></i>近 ${n} 筆配對資料中，有 <strong>${c.normal} 次（${pct('normal')}%）</strong>屬「正常降壓型 Normal Dipper」，平均降壓率 <strong>${avgDip}%</strong>，心血管保護機制運作良好。`;
                     detailHTML = `
                         <div class="text-xs leading-relaxed space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <p class="font-bold text-emerald-600 dark:text-emerald-400">Normal Dipper 的臨床意義</p>
                             <p class="text-slate-600 dark:text-slate-300">夜間血壓下降 10–20% 是心血管風險最低的理想模式，代表自律神經調節正常，心臟有充分的夜間修復時間。請持續維持規律作息、低鹽飲食，避免熬夜破壞此節律。</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">近 ${n} 天分布：反勺 ${c.reverse} / 不降 ${c.non} / 正常 ${c.normal} / 極端 ${c.extreme}</p>
                         </div>`;
                 }
                 dipSummaryEl.className = summaryCSS;
@@ -2009,10 +2075,11 @@
                 if (dipDetailEl) dipDetailEl.innerHTML = detailHTML;
             } else {
                 dipSummaryEl.className = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700';
-                dipSummaryEl.innerHTML = `需要至少 5 個早晚皆有量測的日子才能分析降壓模式，目前有 ${dipRates.length} 筆。`;
+                dipSummaryEl.innerHTML = `需要至少 5 個早晚皆有量測的日子才能分析降壓模式，目前有 ${dipResultAdv.pairedDays} 筆配對日。`;
                 if (dipDetailEl) dipDetailEl.innerHTML = `
-                    <div class="text-[10px] text-slate-400 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <strong>計算方式：</strong>降壓率（%）= (早晨收縮壓 − 晚間收縮壓) ÷ 早晨收縮壓 × 100%。分型標準：正常 Dipper 10–20%、不降型 Non-Dipper &lt;10%、極端降壓型 Extreme Dipper &gt;20%。
+                    <div class="text-[10px] text-slate-400 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                        <p><strong>計算方式：</strong>降壓率（%）= (早晨收縮壓 − 晚間收縮壓) ÷ 早晨收縮壓 × 100%。</p>
+                        <p><strong>ESH 2023 分型標準：</strong>反勺型 Reverse &lt;0%、不降型 Non-Dipper 0–10%、正常 Dipper 10–20%、極端降壓型 Extreme &gt;20%。</p>
                     </div>`;
             }
 
@@ -2146,11 +2213,20 @@
             }
             if (cntEl) cntEl.innerText = recent7Days.length;
 
-            let mode = 'D';
+            // 統一使用 classifyDippingPattern（與進階報表共用），標準為 ESH 2023 百分比降壓率
+            // 主畫面取所有 representative 紀錄參與配對分類（涵蓋 ≥14 個配對日），比僅看 7 日均壓差更穩定
+            const dipResult = classifyDippingPattern(records);
             const diff = avgMornSys - avgEveSys;
-            if (avgMornSys >= 130 && diff >= 15 && diff < 30) mode = 'A';
-            else if (avgEveSys >= 130 && diff <= 0) mode = 'B';
-            else if (diff >= 30) mode = 'C';
+            const isMorningSurge = avgMornSys >= 135 && diff >= 15;  // 收縮壓 ≥135 且早 − 晚 ≥15 mmHg
+
+            // 優先序：reverse > non > morning_surge > extreme > normal
+            // 臨床嚴重度從高到低，確保最危險的訊號優先顯示
+            let mode;
+            if (dipResult.sufficient && dipResult.pattern === 'reverse') mode = 'R';
+            else if (dipResult.sufficient && dipResult.pattern === 'non') mode = 'B';
+            else if (isMorningSurge) mode = 'A';
+            else if (dipResult.sufficient && dipResult.pattern === 'extreme') mode = 'C';
+            else mode = 'D';  // Normal Dipper 或樣本不足時的預設
 
             // 心率附加建議
             let hrAdvice = '';
@@ -2192,11 +2268,25 @@
                              <li><strong>避免清晨強刺激：</strong>冷水澡、劇烈晨跑、緊張通勤等刺激會加劇血管收縮，建議推遲至早餐後血壓穩定再進行。</li>
                              <li><strong>確保晨間量測準確性：</strong>每次在起床 1 小時內、排尿後、服藥前量測，才能精確捕捉真實晨間基線，為醫師提供最可靠的診斷依據。</li>`
                 },
+                'R': {
+                    css: 'bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-300 border-red-300 dark:border-red-800/50',
+                    icon: 'ph-skull text-red-600',
+                    title: 'Mia 緊急警示：反勺型 (Reverse Dipper)',
+                    desc: dipResult.sufficient
+                        ? `Josh弟弟，近 ${dipResult.sampleSize} 天配對量測中，有 ${dipResult.counts.reverse} 天屬「反勺型」（夜間血壓不降反升），平均降壓率 <strong>${dipResult.avgPct}%</strong>（正常應為 +10–20%）。這是所有夜間血壓型態中**心血管風險最高**的一種：JAMA 2022 大型統合分析顯示，Reverse Dipper 中風與心衰竭風險較 Normal Dipper 增加 <strong>2.5–3 倍</strong>，且與隱匿性心衰、自律神經失調、嚴重 OSA、慢性腎病晚期高度相關。請務必於 1–2 週內回診評估，不可拖延。`
+                        : `近期早晚配對量測顯示夜間血壓反而高於早晨。此模式臨床稱為「反勺型」，是心血管風險最高的型態，請密切觀察並就醫評估。`,
+                    advice: `<li><strong>立即排查睡眠呼吸中止症 (OSA)：</strong>嚴重 OSA 是 Reverse Dipper 的最常見病因。請主動向醫師要求安排睡眠多項生理檢查 (PSG)，並評估是否需 CPAP 治療。</li>
+                             <li><strong>檢查腎功能與心臟結構：</strong>請就診時要求做血清肌酸酐 / eGFR、尿白蛋白、心臟超音波（評估左心室肥厚與舒張功能），這些是 Reverse Dipper 受損最早的標的器官。</li>
+                             <li><strong>檢視服藥時機：</strong>HYGIA 與 MAPEC 研究顯示，將至少一種降壓藥移至睡前服用對 Reverse Dipper 改善幅度最大。請與醫師討論是否調整給藥時間（切勿自行調整）。</li>
+                             <li><strong>嚴格限鹽：</strong>每日鈉攝取 &lt;2,000 mg（約 5 公克鹽），高鹽攝取會直接惡化夜間血壓控制。</li>`
+                },
                 'B': {
                     css: 'bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-800/50',
                     icon: 'ph-warning-octagon text-rose-500',
                     title: 'Mia 嚴厲警告：夜間不降 (Non-Dipper)',
-                    desc: `Josh弟弟，正常人夜間血壓應比白天下降 10–20%（「Dipper 型」）。你近期晚間均壓 (${avgEveSys}/${avgEveDia}) 未見明顯回落，屬「Non-Dipper 型」。ESH 2023 指引明確指出此模式與左心室肥厚、蛋白尿、動脈僵硬等靶器官損傷高度相關；21 年長期追蹤研究顯示 Non-Dipper 心血管事件發生率高達 28%，遠高於正常 Dipper 的 6.6%。這是需要積極處理的訊號。`,
+                    desc: dipResult.sufficient
+                        ? `Josh弟弟，近 ${dipResult.sampleSize} 天配對量測中，有 <strong>${dipResult.counts.non} 天（${Math.round(dipResult.counts.non / dipResult.sampleSize * 100)}%）</strong>屬「不降型 Non-Dipper」，平均降壓率僅 <strong>${dipResult.avgPct}%</strong>（正常應為 10–20%）。ESH 2023 指引明確指出此模式與左心室肥厚、蛋白尿、動脈僵硬等靶器官損傷高度相關；21 年長期追蹤研究顯示 Non-Dipper 心血管事件發生率高達 28%，遠高於正常 Dipper 的 6.6%。這是需要積極處理的訊號。`
+                        : `Josh弟弟，正常人夜間血壓應比白天下降 10–20%（「Dipper 型」）。你近期晚間均壓 (${avgEveSys}/${avgEveDia}) 未見明顯回落，屬「Non-Dipper 型」。ESH 2023 指引明確指出此模式與左心室肥厚、蛋白尿、動脈僵硬等靶器官損傷高度相關；21 年長期追蹤研究顯示 Non-Dipper 心血管事件發生率高達 28%，遠高於正常 Dipper 的 6.6%。這是需要積極處理的訊號。`,
                     advice: `<li><strong>嚴格限鈉是首要關鍵：</strong>高鹽攝取導致血漿容量擴張、夜間腎臟排鈉負荷過重，是 Non-Dipper 最常見成因。即日起每日鈉攝取控制在 2,000 mg 以下（約 5 公克食鹽），嚴格減少醬油、醃製品、加工食品及外食。</li>
                              <li><strong>排查睡眠呼吸中止症 (OSA)：</strong>夜間反覆缺氧持續激活交感神經，抑制血壓夜間回落。若有打鼾、白天嗜睡、晨起頭痛等症狀，請積極安排睡眠多項生理檢查 (PSG)。</li>
                              <li><strong>監測腎功能：</strong>慢性腎病 (CKD) 會破壞夜間 BP 調節機制，且 Non-Dipper 與腎損傷形成惡性循環。建議定期檢測血清肌酸酐、eGFR 及晨尿 ACR（白蛋白/肌酸酐比值）。</li>
@@ -2207,8 +2297,8 @@
                     icon: 'ph-trend-down text-blue-500',
                     title: currentAge < 65 ? 'Mia 解讀：極端夜降 (Extreme Dipper) — 年齡評估尚可' : 'Mia 發現警訊：極端夜降 (Extreme Dipper) — 缺血高危',
                     desc: currentAge < 65
-                        ? `早晨均壓 (${avgMornSys}) 比晚間 (${avgEveSys}) 高出 ${diff} mmHg，夜間降幅超過 20%，屬「Extreme Dipper 型」。以你目前 ${currentAge} 歲的年齡模型評估，此種大幅夜間回落反映自律神經調節能力良好，臨床心血管風險相對尚可，但仍需持續監控。`
-                        : `早晨均壓 (${avgMornSys}) 比晚間 (${avgEveSys}) 高出 ${diff} mmHg，夜間降幅超過 20%，屬「Extreme Dipper 型」。AHA Hypertension 2020 研究顯示，65 歲以上患者此型心血管事件風險較 Normal Dipper 高出 2–4 倍，機制為夜間相對低血壓造成心腦灌流不足，對合併動脈狹窄者尤其危險。`,
+                        ? `近 ${dipResult.sampleSize || 0} 天配對量測平均降壓率 <strong>${dipResult.avgPct ?? 0}%</strong>（超過 20% 門檻），屬「Extreme Dipper 型」。以你目前 ${currentAge} 歲的年齡模型評估，此種大幅夜間回落反映自律神經調節能力良好，臨床心血管風險相對尚可，但仍需持續監控。`
+                        : `近 ${dipResult.sampleSize || 0} 天配對量測平均降壓率 <strong>${dipResult.avgPct ?? 0}%</strong>（超過 20% 門檻），屬「Extreme Dipper 型」。AHA Hypertension 2020 研究顯示，65 歲以上患者此型心血管事件風險較 Normal Dipper 高出 2–4 倍，機制為夜間相對低血壓造成心腦灌流不足，對合併動脈狹窄者尤其危險。`,
                     advice: currentAge < 65
                         ? `<li><strong>觀察起床症狀：</strong>只要早晨起床沒有頭暈目眩、視力短暫模糊或肢體無力，維持現有健康作息即可。這些症狀若出現，應立刻就醫。</li>
                            <li><strong>避免睡前飲酒：</strong>酒精具血管擴張效應，會加劇夜間血壓過度下降。建議睡前 3 小時內不飲酒。</li>
@@ -2221,8 +2311,10 @@
                 'D': {
                     css: 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50',
                     icon: 'ph-check-circle text-emerald-500',
-                    title: 'Mia 的分析：健康的晝夜節律 (Normal Dipper)',
-                    desc: `Josh弟弟，早晨均壓 (${avgMornSys}/${avgMornDia})，晚間均壓 (${avgEveSys}/${avgEveDia})，早晚落差 ${Math.abs(diff)} mmHg，符合正常生理節律的 10–20% 夜間回落，屬「Normal Dipper 型」。研究顯示此模式的長期心血管事件風險最低，代表自律神經調節良好，心臟獲得充分的夜間修復時間。`,
+                    title: dipResult.sufficient ? 'Mia 的分析：健康的晝夜節律 (Normal Dipper)' : 'Mia 的初步觀察（資料尚不足以分類）',
+                    desc: dipResult.sufficient
+                        ? `Josh弟弟，近 ${dipResult.sampleSize} 天配對量測平均降壓率 <strong>${dipResult.avgPct}%</strong>，落在 10–20% 的理想區間，屬「Normal Dipper 型」。研究顯示此模式的長期心血管事件風險最低，代表自律神經調節良好，心臟獲得充分的夜間修復時間。`
+                        : `早晨均壓 (${avgMornSys}/${avgMornDia})，晚間均壓 (${avgEveSys}/${avgEveDia})，早晚落差 ${Math.abs(diff)} mmHg。目前早晚配對天數還不足 5 天（需 ${dipResult.totalNeeded || 5} 天），尚無法做夜間降壓型態的正式分類，請持續每日早晚量測累積資料。`,
                     advice: `<li><strong>持續規律量測：</strong>維持每天早晚固定時間量測，讓 Mia 持續追蹤長期趨勢，及早發現任何模式轉變。</li>
                              <li><strong>守住睡眠節律：</strong>建議 23:00 前入睡、保持 7–8 小時睡眠，規律的睡眠是維持健康 Dipper 模式最重要的基礎，避免熬夜。</li>
                              <li><strong>低鈉飲食守住成果：</strong>長期高鈉飲食是轉變為 Non-Dipper 的最主要風險因子，即使目前控制良好，每日鹽分攝取仍應維持在 5 公克以下。</li>`
