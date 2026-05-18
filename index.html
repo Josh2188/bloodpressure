@@ -395,7 +395,7 @@
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="eveningAvgDisplay">--</div>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="grid grid-cols-3 gap-2 mb-2">
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
                     <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-activity text-rose-400"></i> 脈壓均值 <span class="text-[8px] font-normal">(PP)</span></div>
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="ppAvgDisplay">--</div>
@@ -409,7 +409,87 @@
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="recordCountDisplay">--</div>
                 </div>
             </div>
-            
+
+            <!-- 目標血壓參考基準（ESH 2023 / AHA 2017 / TSOC 2022） -->
+            <div class="rounded-lg p-2.5 mb-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                    <i class="ph-fill ph-target text-indigo-500 text-sm"></i>
+                    <span class="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">目標血壓基準（請依個人共病對照）</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-indigo-100 dark:border-indigo-900/50">
+                        <div class="text-[9px] text-slate-500 font-bold">一般成人 &lt;65</div>
+                        <div class="text-xs font-black text-indigo-600 dark:text-indigo-400">&lt;130 / 80</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-indigo-100 dark:border-indigo-900/50">
+                        <div class="text-[9px] text-slate-500 font-bold">≥ 65 歲</div>
+                        <div class="text-xs font-black text-indigo-600 dark:text-indigo-400">&lt;140 / 80</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-indigo-100 dark:border-indigo-900/50">
+                        <div class="text-[9px] text-slate-500 font-bold">CKD / 糖尿病</div>
+                        <div class="text-xs font-black text-indigo-600 dark:text-indigo-400">&lt;130 / 80</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MED 與 心率/RPP 並排 -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <div id="medCard" class="rounded-lg p-2.5 border bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider"><i class="ph-fill ph-arrows-left-right text-violet-500"></i> MED 早晚差</span>
+                        <span id="medGrade" class="text-[9px] font-black px-1.5 py-0.5 rounded">--</span>
+                    </div>
+                    <div class="text-base font-black" id="medValue">--</div>
+                    <div class="text-[9px] text-slate-500 leading-tight mt-0.5" id="medNote">收集中…</div>
+                </div>
+                <div id="hrCard" class="rounded-lg p-2.5 border bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider"><i class="ph-fill ph-heartbeat text-rose-500"></i> 心率 × RPP</span>
+                        <span id="hrGrade" class="text-[9px] font-black px-1.5 py-0.5 rounded">--</span>
+                    </div>
+                    <div class="text-base font-black" id="hrValue">--</div>
+                    <div class="text-[9px] text-slate-500 leading-tight mt-0.5" id="hrNote">收集中…</div>
+                </div>
+            </div>
+
+            <!-- 服藥前後對比（資料齊全才顯示） -->
+            <div id="medicationCompareCard" class="hidden rounded-lg p-2.5 mb-2 border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                    <i class="ph-fill ph-pill text-emerald-600"></i>
+                    <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">服藥效益分析（近 30 日）</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 items-stretch">
+                    <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
+                        <div class="text-[9px] text-slate-500 font-bold">已服藥</div>
+                        <div class="text-sm font-black text-emerald-600 dark:text-emerald-400" id="medOnAvg">--</div>
+                        <div class="text-[9px] text-slate-400" id="medOnCount">0 筆</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
+                        <div class="text-[9px] text-slate-500 font-bold">未服藥</div>
+                        <div class="text-sm font-black text-slate-600 dark:text-slate-300" id="medOffAvg">--</div>
+                        <div class="text-[9px] text-slate-400" id="medOffCount">0 筆</div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
+                        <div class="text-[9px] text-slate-500 font-bold">藥效落差</div>
+                        <div class="text-sm font-black" id="medDelta">--</div>
+                        <div class="text-[9px] text-slate-400">SYS / DIA</div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed" id="medCompareNote"></div>
+            </div>
+
+            <!-- 722 規範執行率 -->
+            <div class="rounded-lg p-2.5 mb-2 border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider"><i class="ph-fill ph-list-checks"></i> 722 規範執行率（近 7 日）</span>
+                    <span id="adherenceScore" class="text-sm font-black text-amber-600 dark:text-amber-400">--</span>
+                </div>
+                <div class="w-full bg-amber-100 dark:bg-amber-900/30 rounded-full h-1.5 mb-1.5 overflow-hidden">
+                    <div id="adherenceBar" class="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500" style="width:0%"></div>
+                </div>
+                <div class="text-[10px] text-slate-600 dark:text-slate-300 leading-relaxed" id="adherenceNote">收集中…</div>
+            </div>
+
             <div id="trendSuggestionBox" class="rounded-xl p-3 border transition-colors duration-300">
                 <div class="flex gap-3 items-start mb-2">
                     <div id="trendIcon" class="mt-0.5 text-2xl"></div>
@@ -967,6 +1047,136 @@
         // [DOM 互動與表單處理層] UI Handlers
         // =========================================
         // ====================================================
+        // MED (Morning-Evening Difference) 分析
+        // 依 J-HOP 研究：MED >15 mmHg 顯著增加心血管事件風險
+        //   <5 穩定 / 5–15 輕度 / 15–25 偏高（J-HOP 警示）/ >25 顯著
+        // ====================================================
+        function analyzeMED(avgMornSys, avgEveSys) {
+            const med = avgMornSys - avgEveSys;
+            let grade, color, note;
+            if (med >= 25) {
+                grade = '顯著高'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
+                note = `早晚收縮壓差 ${med} mmHg，超過 25 強烈警示。請主動告知醫師評估晨間飆高與藥效覆蓋。`;
+            } else if (med >= 15) {
+                grade = '偏高'; color = 'text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300';
+                note = `早晚差 ${med} mmHg，J-HOP 研究指此區間心血管事件風險增加，建議追蹤晨間量測。`;
+            } else if (med >= 5) {
+                grade = '輕度'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
+                note = `早晚差 ${med} mmHg，輕度節律差異，仍在可接受範圍。`;
+            } else if (med >= -5) {
+                grade = '穩定'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
+                note = `早晚差 ${med} mmHg，節律穩定，自律神經調節良好。`;
+            } else {
+                grade = '反向'; color = 'text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
+                note = `晚間反而比早晨高 ${Math.abs(med)} mmHg，與反勺型相關，請積極排查 OSA / CKD。`;
+            }
+            return { med, grade, color, note };
+        }
+
+        // ====================================================
+        // 心率與 RPP（Rate-Pressure Product = SYS × HR）
+        // RPP 反映心肌耗氧量；靜息 RPP 過高與心肌缺血、左心室肥厚相關
+        //   <10,000 正常 / 10,000–12,000 注意 / >12,000 偏高 / >15,000 高負荷
+        // ====================================================
+        function analyzeHrRpp(records) {
+            const validHr = records.filter(r => r.hr !== null);
+            if (validHr.length === 0) return { hasData: false };
+            const avgHr = Math.round(validHr.reduce((s, r) => s + r.hr, 0) / validHr.length);
+            const avgRpp = Math.round(validHr.reduce((s, r) => s + r.sys * r.hr, 0) / validHr.length);
+            let hrGrade, rppGrade, color, note;
+            // HR 分級
+            if (avgHr > 90) { hrGrade = '過快'; }
+            else if (avgHr > 80) { hrGrade = '偏快'; }
+            else if (avgHr >= 60) { hrGrade = '正常'; }
+            else { hrGrade = '偏慢'; }
+            // RPP 分級
+            if (avgRpp >= 15000) {
+                rppGrade = '高負荷'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
+                note = `心肌耗氧量 ${avgRpp}，遠超正常上限。心肌缺血風險明顯升高，請儘速回診評估冠狀動脈狀況。`;
+            } else if (avgRpp >= 12000) {
+                rppGrade = '偏高'; color = 'text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300';
+                note = `心肌耗氧量 ${avgRpp}，與左心室肥厚、運動耐受度下降相關，需減少咖啡因與壓力源。`;
+            } else if (avgRpp >= 10000) {
+                rppGrade = '注意'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
+                note = `心肌耗氧量 ${avgRpp}，略高於理想，可增加有氧運動降低靜息心率。`;
+            } else {
+                rppGrade = '正常'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
+                note = `心肌耗氧量 ${avgRpp}（< 10,000），心臟負荷理想。`;
+            }
+            // 心率附加說明
+            let hrExtra = '';
+            if (avgHr > 90) hrExtra = ` 靜息心率 ${avgHr} bpm 過快（>90），CV 風險 +30%。`;
+            else if (avgHr < 60) hrExtra = ` 靜息心率 ${avgHr} bpm 偏慢，若無服藥需就醫評估節律。`;
+            return { hasData: true, avgHr, avgRpp, hrGrade, rppGrade, color, note: note + hrExtra };
+        }
+
+        // ====================================================
+        // 服藥前後血壓對比（近 30 日）
+        // 直接量化降壓藥效益。需 medicated true / false 各 ≥3 筆才顯示
+        // ====================================================
+        function analyzeMedicationEffect(allRecords) {
+            const cutoff = Date.now() - 30 * 86400000;
+            const recent = allRecords.filter(r => r.timestamp >= cutoff);
+            const on = recent.filter(r => r.medicated);
+            const off = recent.filter(r => !r.medicated);
+            if (on.length < 3 || off.length < 3) {
+                return { hasComparison: false, onCount: on.length, offCount: off.length };
+            }
+            const avg = arr => ({
+                sys: Math.round(arr.reduce((s, r) => s + r.sys, 0) / arr.length),
+                dia: Math.round(arr.reduce((s, r) => s + r.dia, 0) / arr.length)
+            });
+            const onAvg = avg(on);
+            const offAvg = avg(off);
+            const deltaSys = offAvg.sys - onAvg.sys;
+            const deltaDia = offAvg.dia - onAvg.dia;
+            let note;
+            if (deltaSys >= 10) {
+                note = `服藥後收縮壓平均下降 <strong>${deltaSys} mmHg</strong>、舒張壓 <strong>${deltaDia} mmHg</strong>，藥效顯著。請繼續維持規律服藥。`;
+            } else if (deltaSys >= 5) {
+                note = `服藥後收縮壓下降 ${deltaSys} mmHg，藥效中等。若仍未達目標，可與醫師討論是否調整劑量或加入第二種藥物。`;
+            } else if (deltaSys >= 0) {
+                note = `服藥前後血壓差距僅 ${deltaSys} mmHg，藥效有限。可能原因：藥物選擇不適合、服藥時機不對、或合併耐藥性（resistant hypertension）。建議回診討論。`;
+            } else {
+                note = `服藥後血壓反而高出 ${-deltaSys} mmHg（注意：可能是因為高血壓日才會服藥，存在「指標性偏差」）。請與醫師討論真實藥效評估方式。`;
+            }
+            return { hasComparison: true, onAvg, offAvg, deltaSys, deltaDia, onCount: on.length, offCount: off.length, note };
+        }
+
+        // ====================================================
+        // 722 規範執行率（近 7 日）
+        // 每天應「早+晚」皆量；得分 = (早晚都有的天數 × 2 + 只有一邊的天數) / 14
+        // 標準：>85% 優良 / 70–85% 達標 / <70% 不足
+        // ====================================================
+        function analyze722Adherence(records) {
+            const now = new Date();
+            const dayMap = {};
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+                const ds = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+                dayMap[ds] = { 早: false, 晚: false };
+            }
+            records.forEach(r => {
+                if (dayMap[r.date]) dayMap[r.date][r.timeSlot] = true;
+            });
+            const slots = Object.values(dayMap);
+            const filled = slots.reduce((s, d) => s + (d.早 ? 1 : 0) + (d.晚 ? 1 : 0), 0);
+            const score = Math.round(filled / 14 * 100);
+            const fullDays = slots.filter(d => d.早 && d.晚).length;
+            const halfDays = slots.filter(d => (d.早 ? 1 : 0) + (d.晚 ? 1 : 0) === 1).length;
+            const zeroDays = slots.filter(d => !d.早 && !d.晚).length;
+            let grade, note;
+            if (score >= 85) {
+                grade = '優良'; note = `近 7 日完整量測 ${fullDays} 天、半天 ${halfDays} 天。回診時醫師可信賴你的數據作為調藥依據。`;
+            } else if (score >= 70) {
+                grade = '達標'; note = `完整 ${fullDays} 天、半天 ${halfDays} 天、缺漏 ${zeroDays} 天。距離理想還差一些，盡量每天早晚都量。`;
+            } else {
+                grade = '不足'; note = `完整 ${fullDays} 天、半天 ${halfDays} 天、缺漏 ${zeroDays} 天。資料密度不足，醫師難以做藥效判斷。請使用「設定提醒」建立習慣。`;
+            }
+            return { score, grade, note, fullDays, halfDays, zeroDays };
+        }
+
+        // ====================================================
         // 夜間降壓型態分類器（共用，主畫面與進階報表都呼叫此函式）
         // 依據 ESH 2023 / AHA 2020 標準，使用百分比降壓率：
         //   降壓率 = (早晨 SBP − 晚間 SBP) / 早晨 SBP × 100%
@@ -1079,6 +1289,19 @@
             if (!alertEl) return;
             const titleEl = document.getElementById('abnormalAlertTitle');
             const descEl = document.getElementById('abnormalAlertDesc');
+
+            // 48 小時內危機值追蹤（最高優先）
+            const cutoff48h = Date.now() - 48 * 3600000;
+            const recent48hCrisis = bpRecords.filter(r => r.timestamp >= cutoff48h && (r.sys >= 160 || r.dia >= 100));
+            if (recent48hCrisis.length >= 2) {
+                const maxSys = Math.max(...recent48hCrisis.map(r => r.sys));
+                const maxDia = Math.max(...recent48hCrisis.map(r => r.dia));
+                titleEl.textContent = '🚨 48 小時內出現多次危機值';
+                descEl.innerHTML = `過去 48 小時已有 <strong>${recent48hCrisis.length} 次</strong> ≥160/100 mmHg（峰值 ${maxSys}/${maxDia}）。即使期間有其他正常值，此模式仍代表血壓控制嚴重不穩，請<strong>今日內</strong>就醫，不可延遲。`;
+                alertEl.classList.remove('hidden');
+                alertEl.classList.add('active');
+                return;
+            }
 
             // 取最近 5 天的代表性紀錄
             const reps = getRepresentativeRecords();
@@ -2218,6 +2441,57 @@
             const dipResult = classifyDippingPattern(records);
             const diff = avgMornSys - avgEveSys;
             const isMorningSurge = avgMornSys >= 135 && diff >= 15;  // 收縮壓 ≥135 且早 − 晚 ≥15 mmHg
+
+            // ==== 新增臨床指標：MED / 心率·RPP / 服藥對比 / 722 執行率 ====
+            const medRes = analyzeMED(avgMornSys, avgEveSys);
+            const medEl = document.getElementById('medValue');
+            const medGradeEl = document.getElementById('medGrade');
+            const medNoteEl = document.getElementById('medNote');
+            if (medEl) { medEl.innerHTML = `${medRes.med >= 0 ? '+' : ''}${medRes.med} <span class="text-[10px] font-normal text-slate-400">mmHg</span>`; }
+            if (medGradeEl) { medGradeEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded ${medRes.color}`; medGradeEl.textContent = medRes.grade; }
+            if (medNoteEl) { medNoteEl.textContent = medRes.note; }
+
+            const hrRes = analyzeHrRpp(recent7Days);
+            const hrValEl = document.getElementById('hrValue');
+            const hrGradeEl = document.getElementById('hrGrade');
+            const hrNoteEl = document.getElementById('hrNote');
+            if (hrRes.hasData) {
+                if (hrValEl) hrValEl.innerHTML = `${hrRes.avgHr} <span class="text-[10px] font-normal text-slate-400">bpm</span> · RPP <span class="text-sm">${hrRes.avgRpp}</span>`;
+                if (hrGradeEl) { hrGradeEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded ${hrRes.color}`; hrGradeEl.textContent = hrRes.rppGrade; }
+                if (hrNoteEl) hrNoteEl.textContent = hrRes.note;
+            } else {
+                if (hrValEl) hrValEl.innerHTML = '--';
+                if (hrGradeEl) { hrGradeEl.className = 'text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-200 text-slate-500'; hrGradeEl.textContent = '無心率'; }
+                if (hrNoteEl) hrNoteEl.textContent = '近 7 日尚無心率資料，輸入時於數字後加心率即可。';
+            }
+
+            const medCmp = analyzeMedicationEffect(bpRecords);
+            const medCmpCard = document.getElementById('medicationCompareCard');
+            if (medCmpCard) {
+                if (medCmp.hasComparison) {
+                    medCmpCard.classList.remove('hidden');
+                    document.getElementById('medOnAvg').textContent = `${medCmp.onAvg.sys}/${medCmp.onAvg.dia}`;
+                    document.getElementById('medOnCount').textContent = `${medCmp.onCount} 筆`;
+                    document.getElementById('medOffAvg').textContent = `${medCmp.offAvg.sys}/${medCmp.offAvg.dia}`;
+                    document.getElementById('medOffCount').textContent = `${medCmp.offCount} 筆`;
+                    const deltaColor = medCmp.deltaSys >= 10 ? 'text-emerald-600 dark:text-emerald-400'
+                                     : medCmp.deltaSys >= 5 ? 'text-amber-600 dark:text-amber-400'
+                                     : 'text-rose-600 dark:text-rose-400';
+                    document.getElementById('medDelta').className = `text-sm font-black ${deltaColor}`;
+                    document.getElementById('medDelta').textContent = `${medCmp.deltaSys >= 0 ? '↓' : '↑'} ${Math.abs(medCmp.deltaSys)}/${Math.abs(medCmp.deltaDia)}`;
+                    document.getElementById('medCompareNote').innerHTML = medCmp.note;
+                } else {
+                    medCmpCard.classList.add('hidden');
+                }
+            }
+
+            const adh = analyze722Adherence(recent7Days);
+            const adhScoreEl = document.getElementById('adherenceScore');
+            const adhBarEl = document.getElementById('adherenceBar');
+            const adhNoteEl = document.getElementById('adherenceNote');
+            if (adhScoreEl) adhScoreEl.textContent = `${adh.score}%`;
+            if (adhBarEl) adhBarEl.style.width = `${adh.score}%`;
+            if (adhNoteEl) adhNoteEl.innerHTML = `<strong>${adh.grade}</strong> · ${adh.note}`;
 
             // 優先序：reverse > non > morning_surge > extreme > normal
             // 臨床嚴重度從高到低，確保最危險的訊號優先顯示
