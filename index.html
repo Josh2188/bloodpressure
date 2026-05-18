@@ -1144,9 +1144,11 @@
         }
 
         // ====================================================
-        // 722 規範執行率（近 7 日）
-        // 每天應「早+晚」皆量；得分 = (早晚都有的天數 × 2 + 只有一邊的天數) / 14
-        // 標準：>85% 優良 / 70–85% 達標 / <70% 不足
+        // 量測規律性（近 7 日）
+        // 主分數：有量測的天數覆蓋率（X / 7）
+        // 副指標：早晚都齊的天數（理想 722 達標）
+        // 註：因系統以 15:00 為早晚分界，同一段時間量兩次會被歸為同時段，
+        //     所以「半天」不代表沒有努力量，只代表早晚分布不均
         // ====================================================
         function analyze722Adherence(records) {
             const now = new Date();
@@ -1159,21 +1161,29 @@
             records.forEach(r => {
                 if (dayMap[r.date]) dayMap[r.date][r.timeSlot] = true;
             });
-            const slots = Object.values(dayMap);
-            const filled = slots.reduce((s, d) => s + (d.早 ? 1 : 0) + (d.晚 ? 1 : 0), 0);
-            const score = Math.round(filled / 14 * 100);
-            const fullDays = slots.filter(d => d.早 && d.晚).length;
-            const halfDays = slots.filter(d => (d.早 ? 1 : 0) + (d.晚 ? 1 : 0) === 1).length;
-            const zeroDays = slots.filter(d => !d.早 && !d.晚).length;
+            const days = Object.values(dayMap);
+            const fullDays = days.filter(d => d.早 && d.晚).length;
+            const halfDays = days.filter(d => (d.早 ? 1 : 0) + (d.晚 ? 1 : 0) === 1).length;
+            const zeroDays = days.filter(d => !d.早 && !d.晚).length;
+            const coverageDays = fullDays + halfDays;  // 有量到的天數
+            const score = Math.round(coverageDays / 7 * 100);  // 主分數
+            const strictScore = Math.round(fullDays / 7 * 100);  // 早晚都齊的嚴格分
+
             let grade, note;
-            if (score >= 85) {
-                grade = '優良'; note = `近 7 日完整量測 ${fullDays} 天、半天 ${halfDays} 天。回診時醫師可信賴你的數據作為調藥依據。`;
-            } else if (score >= 70) {
-                grade = '達標'; note = `完整 ${fullDays} 天、半天 ${halfDays} 天、缺漏 ${zeroDays} 天。距離理想還差一些，盡量每天早晚都量。`;
+            if (zeroDays === 0 && fullDays >= 5) {
+                grade = '優良';
+                note = `近 7 天天天有量，其中 <strong>${fullDays} 天</strong>早晚都齊。資料品質充分，醫師可信賴此數據調藥。`;
+            } else if (zeroDays === 0) {
+                grade = '良好';
+                note = `近 7 天<strong>天天有量</strong>（早晚都齊 ${fullDays} 天、單時段 ${halfDays} 天）。若能盡量讓上午與傍晚各量一次，分析會更精確。`;
+            } else if (coverageDays >= 5) {
+                grade = '達標';
+                note = `有量測 ${coverageDays} 天、缺漏 <strong>${zeroDays}</strong> 天。整體規律，但建議補齊缺漏日提高分析精度。`;
             } else {
-                grade = '不足'; note = `完整 ${fullDays} 天、半天 ${halfDays} 天、缺漏 ${zeroDays} 天。資料密度不足，醫師難以做藥效判斷。請使用「設定提醒」建立習慣。`;
+                grade = '不足';
+                note = `近 7 天缺漏 <strong>${zeroDays}</strong> 天、僅 ${coverageDays} 天有量。資料密度過低，建議使用「設定提醒」建立習慣。`;
             }
-            return { score, grade, note, fullDays, halfDays, zeroDays };
+            return { score, strictScore, grade, note, fullDays, halfDays, zeroDays, coverageDays };
         }
 
         // ====================================================
@@ -2249,11 +2259,31 @@
                 const c = dipResultAdv.counts;
                 const n = dipResultAdv.sampleSize;
                 const avgDip = dipResultAdv.avgPct;
-                const dominant = dipResultAdv.pattern;
+                let dominant = dipResultAdv.pattern;
                 const pct = (k) => Math.round(c[k] / n * 100);
 
+                // 計算配對日的平均收縮壓，判斷是否為正常血壓族群
+                // 夜間降壓型態的高風險統計皆源自高血壓族群研究，正常血壓者不適用同等警示
+                const avgMorningSys = dipResultAdv.recent.reduce((s, d) => s + d.morning, 0) / dipResultAdv.recent.length;
+                const avgEveningSys = dipResultAdv.recent.reduce((s, d) => s + d.evening, 0) / dipResultAdv.recent.length;
+                const isHypertensiveAdv = avgMorningSys >= 130 || avgEveningSys >= 130;
+                // 若 dominant 是 non/reverse 但血壓正常，標記為 normotensive 版
+                if (!isHypertensiveAdv && (dominant === 'non' || dominant === 'reverse')) {
+                    dominant = 'normotensive_low_dip';
+                }
+
                 let summaryCSS, summaryHTML, detailHTML;
-                if (dominant === 'reverse') {
+                if (dominant === 'normotensive_low_dip') {
+                    summaryCSS = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/20 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50';
+                    summaryHTML = `<i class="ph-fill ph-info mr-1"></i>近 ${n} 天平均降壓率 <strong>${avgDip}%</strong>（技術上低於 10%），但你的平均收縮壓 ${Math.round(avgMorningSys)}/${Math.round(avgEveningSys)} mmHg 在正常範圍內。此指標的臨床預測值主要建立於高血壓族群，目前不需特別處置。`;
+                    detailHTML = `
+                        <div class="text-xs leading-relaxed space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <p class="font-bold text-sky-600 dark:text-sky-400">為什麼可以放心？</p>
+                            <p class="text-slate-600 dark:text-slate-300">ESH 2023 明確指出，Non-Dipper 模式的 28% 心血管事件率是<strong>在高血壓患者長期追蹤研究</strong>中觀察到的數據。對基線血壓正常者，此模式只是節律差異，絕對風險很低。</p>
+                            <p class="text-slate-600 dark:text-slate-300"><strong>建議：</strong>繼續維持目前作息、規律量測即可。若未來血壓升高至 ≥130/80，再回頭關注此項目。</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">近 ${n} 天分布：反勺 ${c.reverse} / 不降 ${c.non} / 正常 ${c.normal} / 極端 ${c.extreme}</p>
+                        </div>`;
+                } else if (dominant === 'reverse') {
                     summaryCSS = 'text-xs font-bold leading-relaxed p-2.5 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-900 dark:text-red-300 border border-red-300 dark:border-red-800/50';
                     summaryHTML = `<i class="ph-fill ph-skull mr-1"></i>近 ${n} 筆配對資料中，有 <strong>${c.reverse} 次（${pct('reverse')}%）</strong>屬「反勺型 Reverse Dipper」（夜間血壓不降反升），平均降壓率 <strong>${avgDip}%</strong>。這是所有夜間血壓型態中風險最高的一種，請務必於 1–2 週內回診評估。`;
                     detailHTML = `
@@ -2442,6 +2472,11 @@
             const diff = avgMornSys - avgEveSys;
             const isMorningSurge = avgMornSys >= 135 && diff >= 15;  // 收縮壓 ≥135 且早 − 晚 ≥15 mmHg
 
+            // 夜間降壓型態的臨床預測值，主要建立於高血壓族群（ESH 2023）。
+            // 血壓正常者出現 non-/reverse dipper，絕對風險很低，不應發出強烈警示。
+            // 高血壓判定（任一）：早或晚 SBP ≥130 或 DBP ≥80
+            const isHypertensive = avgMornSys >= 130 || avgEveSys >= 130 || avgMornDia >= 80 || avgEveDia >= 80;
+
             // ==== 新增臨床指標：MED / 心率·RPP / 服藥對比 / 722 執行率 ====
             const medRes = analyzeMED(avgMornSys, avgEveSys);
             const medEl = document.getElementById('medValue');
@@ -2495,8 +2530,11 @@
 
             // 優先序：reverse > non > morning_surge > extreme > normal
             // 臨床嚴重度從高到低，確保最危險的訊號優先顯示
+            // 但 reverse / non 警告只在「血壓本來就偏高」時觸發；血壓正常者改顯示溫和的資訊版（mode N）
             let mode;
-            if (dipResult.sufficient && dipResult.pattern === 'reverse') mode = 'R';
+            if (dipResult.sufficient && (dipResult.pattern === 'reverse' || dipResult.pattern === 'non') && !isHypertensive) {
+                mode = 'N';  // Normotensive 且 dipping 異常 → 資訊性提示，不是警告
+            } else if (dipResult.sufficient && dipResult.pattern === 'reverse') mode = 'R';
             else if (dipResult.sufficient && dipResult.pattern === 'non') mode = 'B';
             else if (isMorningSurge) mode = 'A';
             else if (dipResult.sufficient && dipResult.pattern === 'extreme') mode = 'C';
@@ -2541,6 +2579,15 @@
                              <li><strong>起床動作放慢：</strong>醒來後先在床上靜躺 30 秒，再緩慢坐起、靜待 1–2 分鐘後才站立。此舉可讓交感神經緩慢活化，有效降低晨間血壓急升幅度。</li>
                              <li><strong>避免清晨強刺激：</strong>冷水澡、劇烈晨跑、緊張通勤等刺激會加劇血管收縮，建議推遲至早餐後血壓穩定再進行。</li>
                              <li><strong>確保晨間量測準確性：</strong>每次在起床 1 小時內、排尿後、服藥前量測，才能精確捕捉真實晨間基線，為醫師提供最可靠的診斷依據。</li>`
+                },
+                'N': {
+                    css: 'bg-sky-50 dark:bg-sky-900/10 text-sky-900 dark:text-sky-300 border-sky-200 dark:border-sky-800/50',
+                    icon: 'ph-info text-sky-500',
+                    title: '資訊提示：血壓正常，夜間降壓率偏低（風險低）',
+                    desc: `Josh弟弟，早晚均壓 (${avgMornSys}/${avgMornDia} → ${avgEveSys}/${avgEveDia}) <strong>都在正常範圍</strong>。雖然平均降壓率 ${dipResult.avgPct}% 在技術定義上偏低，但 ESH 2023 明確指出：夜間降壓型態的臨床預測值主要建立於高血壓族群，對血壓正常者的絕對心血管風險很低，不需過度緊張。`,
+                    advice: `<li><strong>請持續維持目前的生活方式：</strong>規律作息、均衡飲食、適度運動是讓血壓穩定的核心。</li>
+                             <li><strong>追蹤即可，不需特殊處置：</strong>每天早晚量測累積資料即可，不需要為此項目額外就醫。</li>
+                             <li><strong>若未來血壓升高，再回頭看這個指標：</strong>當收縮壓開始 ≥130 時，此指標才會具有臨床意義。</li>`
                 },
                 'R': {
                     css: 'bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-300 border-red-300 dark:border-red-800/50',
@@ -2598,7 +2645,7 @@
             box.className += map[mode].css;
             document.getElementById('trendIcon').innerHTML = `<i class="ph-fill ${map[mode].icon}"></i>`;
             document.getElementById('trendTitle').innerText = map[mode].title;
-            document.getElementById('trendDesc').innerText = map[mode].desc;
+            document.getElementById('trendDesc').innerHTML = map[mode].desc;
             document.getElementById('trendActions').innerHTML = `<ul class="clinical-advice-list">${map[mode].advice}${sdWarning}${ppWarning}${hrAdvice}</ul>`;
         }
 
