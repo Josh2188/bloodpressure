@@ -375,10 +375,22 @@
                 </button>
             </div>
         </div>
+        <!-- 模組分頁切換（血壓 | 瘦身），醫生模式隱藏 -->
+        <div class="max-w-2xl mx-auto px-4 pb-2 hide-in-doctor-mode">
+            <div class="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                <button id="tabBp" onclick="window.switchModule('bp')" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 text-rose-500 shadow-sm">
+                    <i class="ph-fill ph-heartbeat"></i> 血壓
+                </button>
+                <button id="tabWeight" onclick="window.switchModule('weight')" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-500 dark:text-slate-400">
+                    <i class="ph-fill ph-scales"></i> 瘦身
+                </button>
+            </div>
+        </div>
     </header>
 
-    <main class="max-w-2xl mx-auto p-3 space-y-4 mt-1">
-        
+    <main class="max-w-2xl mx-auto p-3 mt-1">
+      <div id="viewBP" class="space-y-4">
+
         <!-- ========================================== -->
         <!-- 醫生模式專屬：門診摘要卡 -->
         <!-- ========================================== -->
@@ -768,6 +780,110 @@
                 </div>
             </div>
         </section>
+      </div><!-- /viewBP -->
+
+      <!-- ========================================================= -->
+      <!-- 瘦身醫生模組 -->
+      <!-- ========================================================= -->
+      <div id="viewWeight" class="hidden space-y-4">
+
+        <!-- 輸入卡 -->
+        <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 transition-colors duration-300">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-scales text-teal-500 text-lg"></i>
+                    <h2 class="text-base font-bold">記錄體重</h2>
+                </div>
+                <button onclick="window.openProfileSettings()" class="text-[10px] flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider font-bold">
+                    <i class="ph-bold ph-gear"></i> 身高/目標
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex-1 flex gap-2">
+                    <div class="flex-1 relative">
+                        <input type="number" inputmode="decimal" step="0.1" id="weightInput" class="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-3 text-center text-xl font-bold shadow-inner focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:outline-none transition-all" placeholder="體重 kg">
+                    </div>
+                    <div class="flex-1 relative">
+                        <input type="number" inputmode="decimal" step="0.1" id="bodyFatInput" class="w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-3 text-center text-xl font-bold shadow-inner focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:outline-none transition-all" placeholder="體脂 %">
+                    </div>
+                </div>
+                <button onclick="window.processWeightInput()" class="flex-shrink-0 w-12 h-12 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md transition-transform active:scale-[0.98] flex justify-center items-center">
+                    <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
+                </button>
+            </div>
+            <p class="text-center text-[10px] text-slate-400 mt-2 tracking-wider">體脂率選填；建議固定每天同一時間（如晨起空腹）量測</p>
+        </section>
+
+        <!-- 現況 Hero -->
+        <section id="weightHero" class="hidden relative overflow-hidden rounded-2xl p-5 text-white shadow-md transition-all duration-300 bg-gradient-to-br from-teal-500 to-emerald-600">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-white/80 text-xs font-medium mb-0.5">目前體重</p>
+                    <div class="flex items-baseline gap-1">
+                        <span id="weightHeroKg" class="text-4xl font-black">--</span>
+                        <span class="text-lg font-bold text-white/80">kg</span>
+                    </div>
+                    <p id="weightHeroAgo" class="text-white/70 text-[11px] mt-1"></p>
+                </div>
+                <div class="text-right">
+                    <span id="weightHeroBmiBadge" class="inline-block text-[11px] font-bold px-2 py-0.5 rounded bg-white/20 mb-1">BMI --</span>
+                    <p id="weightHeroBodyFat" class="text-white/90 text-xs font-medium"></p>
+                    <p id="weightHeroGoalDiff" class="text-white/90 text-xs font-medium mt-0.5"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 目標進度卡 -->
+        <section id="weightGoalCard" class="hidden bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 transition-colors duration-300 cursor-pointer active:opacity-90" onclick="window.openProfileSettings()">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-target text-teal-500 text-lg"></i>
+                    <h2 class="text-base font-bold">目標進度</h2>
+                </div>
+                <span id="weightGoalEta" class="text-[10px] font-bold text-slate-400"></span>
+            </div>
+            <div id="weightGoalContent"></div>
+        </section>
+
+        <!-- 體重趨勢圖 -->
+        <section id="weightChartCard" class="hidden bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 transition-colors duration-300">
+            <div class="flex items-center gap-1.5 mb-3">
+                <i class="ph-fill ph-chart-line text-teal-500 text-lg"></i>
+                <h2 class="text-base font-bold">體重趨勢</h2>
+            </div>
+            <div class="relative h-56"><canvas id="weightChart"></canvas></div>
+        </section>
+
+        <!-- 智能解讀卡 -->
+        <section id="weightSmartCard" class="hidden bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-slate-900 rounded-2xl p-4 shadow-sm border border-teal-100 dark:border-teal-900/50 transition-all duration-300">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-sparkle text-teal-500 text-lg"></i>
+                    <h2 class="text-base font-bold">瘦身醫生解讀</h2>
+                </div>
+                <button onclick="window.exportWeightReport()" class="text-[10px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 hover:bg-teal-200 dark:hover:bg-teal-900/60 transition-colors font-bold active:scale-95">
+                    <i class="ph-bold ph-file-text"></i> 給 AI 看
+                </button>
+            </div>
+            <div id="weightSmartContent"></div>
+        </section>
+
+        <!-- 詳細紀錄 -->
+        <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-transparent dark:border-slate-800 overflow-hidden transition-colors duration-300">
+            <div class="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center gap-1.5">
+                <i class="ph-fill ph-list-bullets text-slate-400 dark:text-slate-500 text-lg"></i>
+                <h2 class="text-base font-bold">體重紀錄</h2>
+                <span id="weightRecordsCount" class="text-[10px] font-bold text-slate-400 ml-1"></span>
+            </div>
+            <div id="weightRecordsList" class="p-2"></div>
+            <div id="weightLoadMoreContainer" class="px-2 pb-2"></div>
+            <div id="weightEmptyState" class="hidden text-center py-10">
+                <p class="text-slate-700 dark:text-slate-200 text-sm font-bold mb-1">還沒有體重紀錄</p>
+                <p class="text-slate-400 dark:text-slate-500 text-xs font-medium">在上方輸入體重就能開始追蹤</p>
+            </div>
+        </section>
+
+      </div><!-- /viewWeight -->
 
     </main>
 
@@ -879,7 +995,7 @@
         // 【護心行動 x Mia - 系統憲法與邏輯宣告】
         // [商業約束]：
         // 1. 所有紀錄日期格式嚴格輸出為 YYYY-MM-DD。
-        // 2. 詳細紀錄列表預設僅展開 90 天內資料，超過的必須透過按鈕觸發展開，以優化長列表效能。
+        // 2. 詳細紀錄列表預設僅展開 30 天內資料，超過的必須透過按鈕觸發展開，以優化長列表效能。
         // 3. 單筆或折疊狀態下的紀錄，必須明確顯示該紀錄之最新「測量時間 (24 小時制)」與「服藥狀態」。
         // [演算法鐵律]：
         // 1. 萃取與清理：計算 streak (連續量測) 時，必須從系統當日或前一日開始向過去尋找連續存在的日期鍵值。
@@ -896,12 +1012,19 @@
         // =========================================
         // [全域狀態與常數]
         // =========================================
-        let bpRecords = []; 
-        let deletedCache = null; 
-        let chartInstance = null; 
+        let bpRecords = [];
+        let deletedCache = null;
+        let chartInstance = null;
         let isDoctorMode = false;
         const PATIENT_BIRTHDATE = new Date('1980-01-02');
         let ttrChart = null, ppMapChart = null, scatterChart = null, longTermChart = null, monthlyChart = null, dipRateChart = null;
+
+        // 瘦身醫生模組狀態
+        let weightRecords = [];
+        let weightDeletedCache = null;
+        let weightChartInstance = null;
+        let currentModule = 'bp';   // 'bp' | 'weight'
+        let userProfile = { height: null, sex: null, goalWeight: null, goalDate: null };
 
         // =========================================
         // [雲端同步：Firebase 設定與全域狀態]
@@ -921,6 +1044,10 @@
         let recordsCol = null;      // 登入後指向 users/{uid}/records
         let cloudUnsub = null;      // onSnapshot 取消訂閱函式
         let suppressPush = false;   // 套用遠端變更時避免回推的旗標
+        let weightsCol = null;      // 登入後指向 users/{uid}/weights
+        let weightUnsub = null;     // 體重 onSnapshot 取消訂閱
+        let profileDoc = null;      // 登入後指向 users/{uid}/meta/profile
+        let profileUnsub = null;    // 個人設定 onSnapshot 取消訂閱
         const FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
 
         function initFirebase() {
@@ -953,12 +1080,461 @@
             if (!document.getElementById('advancedDashboard').classList.contains('hidden')) {
                 window.renderAdvancedCharts();
             }
+            if (currentModule === 'weight') updateWeightUI();
         }
+
+        // =========================================
+        // [瘦身醫生：模組切換、CRUD、渲染、智能解讀、報告]
+        // =========================================
+        window.switchModule = function(mod) {
+            currentModule = mod;
+            document.getElementById('viewBP').classList.toggle('hidden', mod !== 'bp');
+            document.getElementById('viewWeight').classList.toggle('hidden', mod !== 'weight');
+            const tabBp = document.getElementById('tabBp');
+            const tabW = document.getElementById('tabWeight');
+            const active = 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 shadow-sm';
+            const idle = 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-500 dark:text-slate-400';
+            tabBp.className = (mod === 'bp' ? active + ' text-rose-500' : idle);
+            tabW.className = (mod === 'weight' ? active + ' text-teal-500' : idle);
+            window.scrollTo(0, 0);
+            if (mod === 'weight') updateWeightUI();
+        };
+
+        window.processWeightInput = function() {
+            const w = document.getElementById('weightInput').value.trim();
+            const bf = document.getElementById('bodyFatInput').value.trim();
+            if (!w) return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '請輸入體重', timer: 1500, showConfirmButton: false });
+            if (!userProfile.height) {
+                return openProfileSettings(true);  // 先設身高
+            }
+            const rec = normalizeWeight({ id: crypto.randomUUID(), weight: w, bodyFat: bf === '' ? null : bf, timestamp: Date.now() });
+            if (!rec) return Swal.fire({ ...getSwalConfig(), icon: 'error', title: '數值異常', text: '體重 25–300kg、體脂 3–70%。' });
+            weightRecords.push(rec);
+            saveWeightData();
+            weightCloud.upsert(rec);
+            document.getElementById('weightInput').value = '';
+            document.getElementById('bodyFatInput').value = '';
+            hapticFeedback(30);
+            Swal.fire({ ...getSwalConfig(), toast: true, position: 'top', icon: 'success', title: '已記錄', timer: 1200, showConfirmButton: false });
+        };
+
+        window.editWeight = function(id) {
+            const rec = weightRecords.find(r => r.id === id);
+            if (!rec) return;
+            Swal.fire({
+                ...getSwalConfig(), title: '編輯體重紀錄', showCancelButton: true, confirmButtonText: '儲存', cancelButtonText: '取消', confirmButtonColor: '#0d9488',
+                html: `<div class="flex gap-2 mt-3">
+                    <div class="flex-1"><label class="text-[10px] font-bold text-slate-500">體重 kg</label><input id="ewWeight" type="number" step="0.1" value="${rec.weight}" class="w-full mt-1 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-center text-xl font-black text-teal-600 outline-none"></div>
+                    <div class="flex-1"><label class="text-[10px] font-bold text-slate-500">體脂 %</label><input id="ewFat" type="number" step="0.1" value="${rec.bodyFat ?? ''}" placeholder="選填" class="w-full mt-1 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-center text-xl font-black outline-none"></div>
+                </div>`,
+                preConfirm: () => {
+                    const u = normalizeWeight({ ...rec, weight: document.getElementById('ewWeight').value, bodyFat: document.getElementById('ewFat').value || null });
+                    if (!u) { Swal.showValidationMessage('數值不合理'); return false; }
+                    return u;
+                }
+            }).then(res => {
+                if (res.isConfirmed) {
+                    const idx = weightRecords.findIndex(r => r.id === id);
+                    if (idx === -1) return;
+                    res.value.updatedAt = Date.now();
+                    weightRecords[idx] = res.value;
+                    saveWeightData();
+                    weightCloud.upsert(res.value);
+                    Swal.fire({ ...getSwalConfig(), toast: true, position: 'bottom-end', icon: 'success', title: '已更新', timer: 1200, showConfirmButton: false });
+                }
+            });
+        };
+
+        window.deleteWeight = function(id) {
+            const idx = weightRecords.findIndex(r => r.id === id);
+            if (idx === -1) return;
+            weightDeletedCache = weightRecords.splice(idx, 1)[0];
+            saveWeightData();
+            weightCloud.softDelete(id);
+            Swal.fire({ ...getSwalConfig(), toast: true, position: 'bottom-end', icon: 'success', title: '已移除', showConfirmButton: true, confirmButtonText: '復原', confirmButtonColor: '#10b981', timer: 4000, timerProgressBar: true })
+                .then(r => {
+                    if (r.isConfirmed && weightDeletedCache) {
+                        weightDeletedCache.updatedAt = Date.now();
+                        weightRecords.push(weightDeletedCache);
+                        const restored = weightDeletedCache;
+                        weightDeletedCache = null;
+                        saveWeightData();
+                        weightCloud.upsert(restored);
+                    }
+                });
+        };
+
+        window.openProfileSettings = function(forceHeight) {
+            Swal.fire({
+                ...getSwalConfig(), title: '身高與目標設定', showCancelButton: true, confirmButtonText: '儲存', cancelButtonText: '取消', confirmButtonColor: '#0d9488',
+                html: `<div class="flex flex-col gap-3 mt-2 text-left">
+                    <div class="flex gap-2">
+                        <div class="flex-1"><label class="text-[10px] font-bold text-slate-500">身高 cm</label><input id="pHeight" type="number" step="0.1" value="${userProfile.height ?? ''}" class="w-full mt-1 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-center font-bold outline-none"></div>
+                        <div class="flex-1"><label class="text-[10px] font-bold text-slate-500">性別</label>
+                            <select id="pSex" class="w-full mt-1 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-bold outline-none">
+                                <option value="" ${!userProfile.sex?'selected':''}>不設</option>
+                                <option value="M" ${userProfile.sex==='M'?'selected':''}>男</option>
+                                <option value="F" ${userProfile.sex==='F'?'selected':''}>女</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1"><label class="text-[10px] font-bold text-slate-500">目標體重 kg</label><input id="pGoalW" type="number" step="0.1" value="${userProfile.goalWeight ?? ''}" placeholder="選填" class="w-full mt-1 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-center font-bold outline-none"></div>
+                        <div class="flex-1"><label class="text-[10px] font-bold text-slate-500">目標日期</label><input id="pGoalD" type="date" value="${userProfile.goalDate ?? ''}" class="w-full mt-1 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-bold outline-none"></div>
+                    </div>
+                    ${forceHeight ? '<p class="text-[11px] text-amber-600 font-bold">請先輸入身高才能計算 BMI 喔</p>' : ''}
+                </div>`,
+                preConfirm: () => {
+                    const h = parseFloat(document.getElementById('pHeight').value);
+                    if (!h || h < 100 || h > 250) { Swal.showValidationMessage('身高請填 100–250 cm'); return false; }
+                    return {
+                        height: h,
+                        sex: document.getElementById('pSex').value || null,
+                        goalWeight: parseFloat(document.getElementById('pGoalW').value) || null,
+                        goalDate: document.getElementById('pGoalD').value || null
+                    };
+                }
+            }).then(res => {
+                if (res.isConfirmed) {
+                    userProfile = { ...userProfile, ...res.value, updatedAt: Date.now() };
+                    saveProfile();
+                }
+            });
+        };
+
+        // ---- 渲染 ----
+        function getLatestWeight() {
+            if (weightRecords.length === 0) return null;
+            return [...weightRecords].sort((a, b) => b.timestamp - a.timestamp)[0];
+        }
+
+        function updateWeightUI() {
+            renderWeightHero();
+            renderWeightGoal();
+            renderWeightChart();
+            renderWeightSmart();
+            renderWeightTable();
+        }
+
+        function renderWeightHero() {
+            const hero = document.getElementById('weightHero');
+            const latest = getLatestWeight();
+            if (!hero) return;
+            if (!latest) { hero.classList.add('hidden'); return; }
+            hero.classList.remove('hidden');
+            document.getElementById('weightHeroKg').textContent = latest.weight;
+            document.getElementById('weightHeroAgo').textContent = formatTimeAgo(latest.timestamp);
+            const bmi = calcBMI(latest.weight, userProfile.height);
+            const cls = classifyBMI(bmi);
+            document.getElementById('weightHeroBmiBadge').textContent = bmi !== null ? `BMI ${bmi}・${cls.label}` : '未設身高';
+            document.getElementById('weightHeroBodyFat').textContent = latest.bodyFat !== null ? `體脂 ${latest.bodyFat}%` : '';
+            const gd = document.getElementById('weightHeroGoalDiff');
+            if (userProfile.goalWeight) {
+                const diff = Math.round((latest.weight - userProfile.goalWeight) * 10) / 10;
+                gd.textContent = diff > 0 ? `距目標還有 ${diff} kg` : (diff < 0 ? `已超越目標 ${-diff} kg 🎉` : '已達標 🎉');
+            } else gd.textContent = '';
+        }
+
+        // 計算每週變化速度（kg/週，負為減重）：用近 28 天線性回歸斜率
+        function weeklyRate(recs) {
+            const cutoff = Date.now() - 28 * 86400000;
+            const pts = recs.filter(r => r.timestamp >= cutoff).map(r => [r.timestamp, r.weight]);
+            if (pts.length < 2) {
+                if (recs.length < 2) return null;
+                const first = recs[0], last = recs[recs.length - 1];
+                const days = (last.timestamp - first.timestamp) / 86400000;
+                return days > 0 ? (last.weight - first.weight) / days * 7 : null;
+            }
+            const n = pts.length;
+            const mx = pts.reduce((s, p) => s + p[0], 0) / n;
+            const my = pts.reduce((s, p) => s + p[1], 0) / n;
+            let num = 0, den = 0;
+            pts.forEach(p => { num += (p[0] - mx) * (p[1] - my); den += (p[0] - mx) ** 2; });
+            if (den === 0) return null;
+            return num / den * 7 * 86400000;  // kg per week
+        }
+
+        function renderWeightGoal() {
+            const card = document.getElementById('weightGoalCard');
+            const latest = getLatestWeight();
+            if (!card) return;
+            if (!latest || !userProfile.goalWeight) { card.classList.add('hidden'); return; }
+            card.classList.remove('hidden');
+            const sorted = [...weightRecords].sort((a, b) => a.timestamp - b.timestamp);
+            const start = sorted[0].weight;
+            const cur = latest.weight;
+            const goal = userProfile.goalWeight;
+            const totalNeed = start - goal;
+            const done = start - cur;
+            const pct = totalNeed !== 0 ? Math.max(0, Math.min(100, Math.round(done / totalNeed * 100))) : 100;
+            const rate = weeklyRate(sorted);
+            const remain = Math.round((cur - goal) * 10) / 10;
+
+            let etaText = '';
+            if (userProfile.goalDate) {
+                etaText = `目標日 ${userProfile.goalDate}`;
+            }
+            document.getElementById('weightGoalEta').textContent = etaText;
+
+            let projection = '';
+            if (rate !== null && rate < -0.05 && remain > 0) {
+                const weeksLeft = remain / -rate;
+                const eta = new Date(Date.now() + weeksLeft * 7 * 86400000);
+                projection = `依目前速度（每週 ${Math.abs(Math.round(rate * 10) / 10)} kg），約 <strong>${eta.toISOString().slice(0,10)}</strong> 達標。`;
+            } else if (remain <= 0) {
+                projection = '已達成目標 🎉';
+            } else {
+                projection = '目前體重沒有下降趨勢，需調整飲食或運動。';
+            }
+
+            document.getElementById('weightGoalContent').innerHTML = `
+                <div class="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                    <span>起始 ${start}kg</span><span class="text-teal-600">目前 ${cur}kg</span><span>目標 ${goal}kg</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 mb-2 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-500" style="width:${pct}%"></div>
+                </div>
+                <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">已減 <strong>${Math.round(done*10)/10} kg</strong>（完成 ${pct}%），還差 <strong>${Math.max(0,remain)} kg</strong>。${projection}</div>
+            `;
+        }
+
+        function renderWeightChart() {
+            const card = document.getElementById('weightChartCard');
+            const canvas = document.getElementById('weightChart');
+            if (!card || !canvas) return;
+            if (weightRecords.length < 2) { card.classList.add('hidden'); return; }
+            card.classList.remove('hidden');
+            // 每日取最後一筆
+            const byDate = {};
+            [...weightRecords].sort((a, b) => a.timestamp - b.timestamp).forEach(r => { byDate[r.date] = r.weight; });
+            const dates = Object.keys(byDate).sort();
+            const data = dates.map(d => byDate[d]);
+            const isDark = document.documentElement.classList.contains('dark');
+            if (weightChartInstance) weightChartInstance.destroy();
+            const datasets = [{
+                label: '體重', data, borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)',
+                fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2
+            }];
+            if (userProfile.goalWeight) {
+                datasets.push({ label: '目標', data: dates.map(() => userProfile.goalWeight), borderColor: '#f59e0b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, fill: false });
+            }
+            weightChartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { labels: dates.map(d => d.slice(5)), datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: 10 } } } },
+                    scales: {
+                        y: { grid: { color: isDark ? '#1e293b' : '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function renderWeightTable() {
+            const list = document.getElementById('weightRecordsList');
+            const moreBox = document.getElementById('weightLoadMoreContainer');
+            const empty = document.getElementById('weightEmptyState');
+            const countEl = document.getElementById('weightRecordsCount');
+            if (!list) return;
+            list.innerHTML = ''; moreBox.innerHTML = '';
+            countEl.textContent = weightRecords.length ? `(${weightRecords.length})` : '';
+            if (weightRecords.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            const sorted = [...weightRecords].sort((a, b) => b.timestamp - a.timestamp);
+            const cutoff = Date.now() - 30 * 86400000;
+            const recent = sorted.filter(r => r.timestamp >= cutoff);
+            const older = sorted.filter(r => r.timestamp < cutoff);
+
+            const renderRows = (arr, container) => {
+                let prevWeight = null;
+                arr.forEach(r => {
+                    const bmi = calcBMI(r.weight, userProfile.height);
+                    const cls = classifyBMI(bmi);
+                    // 與前一筆（時間較新者在上，故比較需反向）— 簡化：顯示與目標差
+                    const time = new Date(r.timestamp).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center py-2.5 px-3 rounded-lg border-b border-slate-100 dark:border-slate-800/50 last:border-0';
+                    row.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-500 font-medium">${time}</span>
+                            <div class="flex items-baseline gap-2 font-black text-lg">
+                                <span class="text-teal-600 dark:text-teal-400">${r.weight}</span><span class="text-xs text-slate-400 font-bold">kg</span>
+                                ${bmi !== null ? `<span class="text-xs ${cls.color} font-bold">BMI ${bmi}</span>` : ''}
+                                ${r.bodyFat !== null ? `<span class="text-xs text-slate-400 font-bold">體脂${r.bodyFat}%</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="window.editWeight('${r.id}')" class="p-1.5 text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/30 rounded transition-colors"><i class="ph-bold ph-pencil-simple"></i></button>
+                            <button onclick="window.deleteWeight('${r.id}')" class="p-1.5 text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded transition-colors"><i class="ph-bold ph-trash"></i></button>
+                        </div>`;
+                    container.appendChild(row);
+                });
+            };
+
+            renderRows(recent, list);
+            if (older.length > 0) {
+                const btn = document.createElement('button');
+                btn.className = 'w-full py-3 mt-1 text-sm text-slate-500 font-bold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors';
+                btn.innerHTML = `<i class="ph-bold ph-caret-down mr-1"></i> 展開舊紀錄 (${older.length})`;
+                btn.onclick = () => { btn.remove(); renderRows(older, list); };
+                moreBox.appendChild(btn);
+            }
+        }
+
+        // ---- 瘦身智能解讀引擎 ----
+        function generateWeightReading(recs, profile) {
+            const records = (recs || []).slice().sort((a, b) => a.timestamp - b.timestamp);
+            if (records.length < 2) return { hasData: false };
+            const latest = records[records.length - 1];
+            const start = records[0];
+            const bmi = calcBMI(latest.weight, profile.height);
+            const cls = classifyBMI(bmi);
+            const rate = weeklyRate(records);
+            const totalChange = Math.round((latest.weight - start.weight) * 10) / 10;
+            const spanDays = Math.round((latest.timestamp - start.timestamp) / 86400000);
+
+            // 總評
+            let verdict;
+            if (rate !== null && rate <= -1.2) {
+                verdict = { level: 'warn', emoji: '⚠️', title: '減重速度偏快', summary: `每週約減 ${Math.abs(Math.round(rate*10)/10)} kg，超過建議上限。太快易流失肌肉、掉髮、復胖，建議放慢到每週 0.5–1kg。` };
+            } else if (rate !== null && rate <= -0.3) {
+                verdict = { level: 'good', emoji: '🟢', title: '減重進行中且速度健康', summary: `每週約減 ${Math.abs(Math.round(rate*10)/10)} kg，落在理想區間，繼續保持。` };
+            } else if (rate !== null && rate >= 0.3) {
+                verdict = { level: 'up', emoji: '🔴', title: '體重上升中', summary: `近期每週約增 ${Math.round(rate*10)/10} kg，回想飲食/作息變化，必要時調整。` };
+            } else {
+                verdict = { level: 'flat', emoji: '🟡', title: '體重持平', summary: `近期體重變化不大。${profile.goalWeight ? '若仍想往目標前進，可調整熱量缺口或增加活動量。' : ''}` };
+            }
+
+            const paragraphs = [];
+            // BMI
+            if (bmi !== null) {
+                paragraphs.push({ icon: '📐', title: 'BMI 與身形', text: `目前 BMI <strong>${bmi}</strong>（${cls.label}）。${cls.key==='normal'?'落在健康範圍，維持就好。':(cls.key==='under'?'偏輕，注意營養是否足夠。':'高於正常，減重對代謝與關節都有益。')}` });
+            } else {
+                paragraphs.push({ icon: '📐', title: 'BMI', text: '尚未設定身高，無法計算 BMI。點右上「身高/目標」設定後即可顯示。' });
+            }
+            // 趨勢
+            let tText = `這 ${spanDays} 天內共 ${records.length} 筆，體重從 ${start.weight} → ${latest.weight} kg（${totalChange>0?'+':''}${totalChange} kg）。`;
+            if (rate !== null) tText += ` 近期速度約每週 ${Math.round(rate*10)/10} kg。`;
+            paragraphs.push({ icon: '📉', title: '趨勢', text: tText });
+            // 目標
+            if (profile.goalWeight) {
+                const remain = Math.round((latest.weight - profile.goalWeight) * 10) / 10;
+                if (remain <= 0) {
+                    paragraphs.push({ icon: '🎯', title: '目標', text: `已達成目標 ${profile.goalWeight} kg，太棒了！接下來重點是維持不復胖。` });
+                } else if (rate !== null && rate < -0.05) {
+                    const eta = new Date(Date.now() + (remain / -rate) * 7 * 86400000).toISOString().slice(0, 10);
+                    let goalNote = `距目標 ${profile.goalWeight} kg 還有 ${remain} kg，依目前速度約 ${eta} 達成。`;
+                    if (profile.goalDate) {
+                        const behind = new Date(eta) > new Date(profile.goalDate);
+                        goalNote += behind ? ` 比你設定的 ${profile.goalDate} 略慢，可再加把勁。` : ` 可望在 ${profile.goalDate} 前達成 👍`;
+                    }
+                    paragraphs.push({ icon: '🎯', title: '目標進度', text: goalNote });
+                } else {
+                    paragraphs.push({ icon: '🎯', title: '目標進度', text: `距目標 ${profile.goalWeight} kg 還有 ${remain} kg，但目前沒有下降趨勢，需調整策略。` });
+                }
+            }
+            // 平台期
+            const last21 = records.filter(r => r.timestamp >= Date.now() - 21 * 86400000);
+            if (last21.length >= 4 && rate !== null && Math.abs(rate) < 0.1) {
+                paragraphs.push({ icon: '🪨', title: '平台期', text: '近三週體重幾乎沒變，可能進入平台期。可嘗試調整飲食組成、增加阻力訓練、或檢視睡眠與壓力。' });
+            }
+            // 體脂
+            const withFat = records.filter(r => r.bodyFat !== null);
+            if (withFat.length >= 1) {
+                const bf = withFat[withFat.length - 1].bodyFat;
+                let bfNote = `最新體脂率 ${bf}%。`;
+                if (profile.sex === 'M') bfNote += bf > 25 ? ' 男性 >25% 屬偏高，建議搭配阻力訓練增肌減脂。' : (bf < 10 ? ' 偏低，注意賀爾蒙與免疫。' : ' 落在健康範圍。');
+                else if (profile.sex === 'F') bfNote += bf > 32 ? ' 女性 >32% 屬偏高，建議搭配阻力訓練。' : (bf < 18 ? ' 偏低，注意生理機能。' : ' 落在健康範圍。');
+                else bfNote += ' 設定性別後可給更精準的評估。';
+                paragraphs.push({ icon: '💪', title: '體脂率', text: bfNote });
+            }
+
+            const actions = [];
+            if (rate !== null && rate <= -1.2) actions.push('放慢減重速度到每週 0.5–1kg，保留肌肉、降低復胖。');
+            if (cls.key && cls.key.startsWith('obese')) actions.push('BMI 偏高：以飲食控制 + 每週 150 分鐘中強度有氧為主。');
+            if (rate !== null && rate >= 0.3) actions.push('體重上升：檢視含糖飲料、宵夜、外食頻率。');
+            if (last21.length >= 4 && rate !== null && Math.abs(rate) < 0.1 && profile.goalWeight) actions.push('突破平台期：增加阻力訓練或調整熱量缺口。');
+            if (!profile.goalWeight) actions.push('設定目標體重與日期，App 就能幫你追蹤進度與預估達成日。');
+            if (actions.length === 0) actions.push('維持目前的飲食與運動習慣，定期量測即可。');
+            actions.push('本解讀僅供參考，特殊疾病或用藥請諮詢醫師或營養師。');
+
+            return { hasData: true, verdict, paragraphs, actions, stats: { bmi, cls: cls.label, rate, totalChange, latest: latest.weight, start: start.weight, count: records.length } };
+        }
+
+        function renderWeightSmart() {
+            const card = document.getElementById('weightSmartCard');
+            const content = document.getElementById('weightSmartContent');
+            if (!card || !content) return;
+            const data = generateWeightReading(weightRecords, userProfile);
+            if (!data.hasData) { card.classList.add('hidden'); return; }
+            card.classList.remove('hidden');
+            const vColor = {
+                warn: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+                up:   'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
+                flat: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+                good: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+            }[data.verdict.level];
+            let html = `<div class="rounded-xl border p-3 mb-3 ${vColor}"><div class="font-black text-sm mb-0.5">${data.verdict.emoji} ${data.verdict.title}</div><div class="text-xs leading-relaxed opacity-90">${data.verdict.summary}</div></div><div class="flex flex-col gap-2.5 mb-3">`;
+            for (const p of data.paragraphs) {
+                html += `<div class="flex gap-2 items-start"><span class="text-base leading-none mt-0.5">${p.icon}</span><div class="flex-1"><div class="text-[11px] font-black text-slate-700 dark:text-slate-200 mb-0.5">${p.title}</div><div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${p.text}</div></div></div>`;
+            }
+            html += `</div><div class="rounded-xl bg-white/70 dark:bg-slate-800/50 border border-teal-100 dark:border-teal-900/40 p-3"><div class="text-[11px] font-black text-teal-700 dark:text-teal-300 mb-1.5 flex items-center gap-1"><i class="ph-fill ph-list-checks"></i> 建議行動</div><ul class="flex flex-col gap-1">`;
+            for (const a of data.actions) html += `<li class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed flex gap-1.5"><span class="text-teal-400 mt-0.5">▸</span><span class="flex-1">${a}</span></li>`;
+            html += `</ul></div>`;
+            content.innerHTML = html;
+        }
+
+        window.exportWeightReport = function() {
+            if (weightRecords.length === 0) {
+                return Swal.fire({ ...getSwalConfig(), icon: 'info', title: '還沒有資料', timer: 1500, showConfirmButton: false });
+            }
+            const now = new Date();
+            const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+            const sorted = [...weightRecords].sort((a, b) => a.timestamp - b.timestamp);
+            const sr = generateWeightReading(weightRecords, userProfile);
+
+            let md = `# 體重 / 瘦身報告\n\n`;
+            md += `> 匯出時間：${now.toLocaleString('zh-TW')}　紀錄筆數：${weightRecords.length}\n`;
+            md += `> 身高：${userProfile.height ?? '未設'} cm`;
+            if (userProfile.sex) md += `　性別：${userProfile.sex === 'M' ? '男' : '女'}`;
+            if (userProfile.goalWeight) md += `　目標：${userProfile.goalWeight} kg${userProfile.goalDate ? '（' + userProfile.goalDate + '）' : ''}`;
+            md += `\n\n---\n\n`;
+
+            if (sr.hasData) {
+                md += `## 智能解讀\n\n`;
+                md += `**${sr.verdict.emoji} ${sr.verdict.title}**　${sr.verdict.summary.replace(/<\/?strong>/g, '**')}\n\n`;
+                for (const p of sr.paragraphs) md += `- **${p.icon} ${p.title}**：${p.text.replace(/<\/?strong>/g, '**')}\n`;
+                md += `\n**建議行動**\n\n`;
+                for (const a of sr.actions) md += `- ${a}\n`;
+                md += `\n---\n\n`;
+            }
+
+            md += `## 每日紀錄\n\n| 日期 | 時間 | 體重(kg) | BMI | 體脂(%) |\n|---|---|---|---|---|\n`;
+            [...sorted].reverse().forEach(r => {
+                const t = new Date(r.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const bmi = calcBMI(r.weight, userProfile.height);
+                md += `| ${r.date} | ${t} | ${r.weight} | ${bmi ?? '--'} | ${r.bodyFat ?? '--'} |\n`;
+            });
+            md += `\n---\n_由「護心行動 x Mia」瘦身醫生匯出_\n`;
+
+            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `體重報告_${today}.md`; a.click();
+            URL.revokeObjectURL(url);
+            Swal.fire({ ...getSwalConfig(), icon: 'success', title: '報告已匯出', text: '把 .md 檔貼給 AI 讀就行囉！', timer: 2000, showConfirmButton: false });
+        };
 
         window.onload = () => {
             injectPWA();
             applyTheme();
+            loadProfile();              // 身高/目標等個人設定
+            loadWeightData();           // 體重本機快取
             loadLocalData();            // 先用本機快取即時顯示（離線優先）
+            updateWeightUI();
             applyRandomGradient();
             resetMedicatedToggle();
             startAuthFlow();            // 再啟動 Firebase 登入 / 雲端同步
@@ -1118,6 +1694,72 @@
         }
 
         // =========================================
+        // [瘦身醫生：體重資料模型與本機儲存]
+        // =========================================
+        function normalizeWeight(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const weight = Number(raw.weight);
+            const bodyFat = (raw.bodyFat === null || raw.bodyFat === undefined || raw.bodyFat === '' || isNaN(Number(raw.bodyFat))) ? null : Number(raw.bodyFat);
+            const timestamp = Number(raw.timestamp) || Date.now();
+            if (!Number.isFinite(weight) || weight < 25 || weight > 300) return null;
+            if (bodyFat !== null && (!Number.isFinite(bodyFat) || bodyFat < 3 || bodyFat > 70)) return null;
+            return {
+                id: raw.id || crypto.randomUUID(),
+                date: getLogicalDateString(timestamp),
+                weight: Math.round(weight * 10) / 10,
+                bodyFat: bodyFat === null ? null : Math.round(bodyFat * 10) / 10,
+                timestamp: timestamp,
+                updatedAt: Number(raw.updatedAt) || timestamp,
+                deleted: !!raw.deleted
+            };
+        }
+
+        function loadWeightData() {
+            try {
+                const raw = localStorage.getItem('bp_weight_data');
+                if (raw) weightRecords = JSON.parse(raw).map(normalizeWeight).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
+            } catch (e) { weightRecords = []; console.error('Failed to load weight data', e); }
+        }
+
+        function saveWeightData() {
+            weightRecords = weightRecords.map(normalizeWeight).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
+            localStorage.setItem('bp_weight_data', JSON.stringify(weightRecords));
+            updateWeightUI();
+        }
+
+        function loadProfile() {
+            try {
+                const raw = localStorage.getItem('bp_profile');
+                if (raw) userProfile = { ...userProfile, ...JSON.parse(raw) };
+            } catch (e) { console.error('Failed to load profile', e); }
+        }
+
+        function saveProfile() {
+            localStorage.setItem('bp_profile', JSON.stringify(userProfile));
+            if (profileDoc) {
+                profileDoc.set({ ...userProfile, updatedAt: Date.now() }, { merge: true })
+                    .catch(err => console.error('[雲端同步] profile 寫入失敗', err));
+            }
+            updateWeightUI();
+        }
+
+        // BMI 計算與分類（台灣 HPA 標準）
+        function calcBMI(weightKg, heightCm) {
+            if (!weightKg || !heightCm) return null;
+            const m = heightCm / 100;
+            return Math.round(weightKg / (m * m) * 10) / 10;
+        }
+        function classifyBMI(bmi) {
+            if (bmi === null) return { label: '—', color: 'text-slate-400', key: 'na' };
+            if (bmi < 18.5) return { label: '過輕', color: 'text-blue-500', key: 'under' };
+            if (bmi < 24)   return { label: '正常', color: 'text-emerald-500', key: 'normal' };
+            if (bmi < 27)   return { label: '過重', color: 'text-amber-500', key: 'over' };
+            if (bmi < 30)   return { label: '輕度肥胖', color: 'text-orange-500', key: 'obese1' };
+            if (bmi < 35)   return { label: '中度肥胖', color: 'text-rose-500', key: 'obese2' };
+            return { label: '重度肥胖', color: 'text-red-600', key: 'obese3' };
+        }
+
+        // =========================================
         // [雲端同步層] Cloud Sync (Firestore)
         // 設計：localStorage 為離線快取（即時載入），Firestore 為跨裝置同步真實來源。
         //   - mutation（新增/編輯/刪除）顯式呼叫 upsert/softDelete 推上雲端。
@@ -1256,6 +1898,97 @@
         }
 
         // =========================================
+        // [瘦身醫生：體重雲端同步層]（鏡像 cloudSync，共用 setStatus 與 suppressPush）
+        // =========================================
+        const weightCloud = {
+            upsert(rec) {
+                if (!weightsCol || !rec || !rec.id) return Promise.resolve();
+                const payload = {
+                    weight: rec.weight,
+                    bodyFat: rec.bodyFat === undefined ? null : rec.bodyFat,
+                    timestamp: rec.timestamp, date: rec.date,
+                    updatedAt: rec.updatedAt || Date.now(),
+                    deleted: false
+                };
+                cloudSync.setStatus('syncing');
+                return weightsCol.doc(rec.id).set(payload, { merge: true })
+                    .then(() => cloudSync.setStatus('synced'))
+                    .catch((err) => { console.error('[體重同步] upsert 失敗', err); cloudSync.setStatus('error'); });
+            },
+            softDelete(id) {
+                if (!weightsCol || !id) return Promise.resolve();
+                cloudSync.setStatus('syncing');
+                return weightsCol.doc(id).set({ deleted: true, updatedAt: Date.now() }, { merge: true })
+                    .then(() => cloudSync.setStatus('synced'))
+                    .catch((err) => { console.error('[體重同步] softDelete 失敗', err); cloudSync.setStatus('error'); });
+            },
+            async migrateLocal(uid) {
+                const flagKey = 'bp_weight_migrated_' + uid;
+                if (localStorage.getItem(flagKey) === '1') return;
+                if (!weightsCol || weightRecords.length === 0) { localStorage.setItem(flagKey, '1'); return; }
+                try {
+                    for (let i = 0; i < weightRecords.length; i += 450) {
+                        const batch = fbDb.batch();
+                        weightRecords.slice(i, i + 450).forEach((r) => {
+                            batch.set(weightsCol.doc(r.id), {
+                                weight: r.weight, bodyFat: r.bodyFat === undefined ? null : r.bodyFat,
+                                timestamp: r.timestamp, date: r.date,
+                                updatedAt: r.updatedAt || r.timestamp, deleted: false
+                            }, { merge: true });
+                        });
+                        await batch.commit();
+                    }
+                    localStorage.setItem(flagKey, '1');
+                } catch (err) { console.error('[體重同步] 首次遷移失敗', err); }
+            },
+            start() {
+                if (!weightsCol) return;
+                if (weightUnsub) { weightUnsub(); weightUnsub = null; }
+                weightUnsub = weightsCol.onSnapshot((snap) => {
+                    applyRemoteWeightChanges(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+                }, (err) => { console.error('[體重同步] onSnapshot 錯誤', err); });
+            },
+            stop() {
+                if (weightUnsub) { weightUnsub(); weightUnsub = null; }
+                if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+            }
+        };
+
+        function applyRemoteWeightChanges(remoteDocs) {
+            const localById = new Map(weightRecords.map((r) => [r.id, r]));
+            let changed = false;
+            for (const doc of remoteDocs) {
+                if (!doc || !doc.id) continue;
+                const local = localById.get(doc.id);
+                if (doc.deleted) { if (local) { localById.delete(doc.id); changed = true; } continue; }
+                const incoming = normalizeWeight(doc);
+                if (!incoming) continue;
+                if (!local || (incoming.updatedAt || 0) > (local.updatedAt || 0)) { localById.set(doc.id, incoming); changed = true; }
+            }
+            if (!changed) return;
+            suppressPush = true;
+            try {
+                weightRecords = Array.from(localById.values());
+                saveWeightData();
+            } finally { suppressPush = false; }
+        }
+
+        // 個人設定（身高/性別/目標）雲端同步：以 updatedAt 最新者勝
+        function startProfileSync() {
+            if (!profileDoc) return;
+            if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+            profileUnsub = profileDoc.onSnapshot((snap) => {
+                if (!snap.exists) return;
+                const remote = snap.data();
+                if ((remote.updatedAt || 0) >= (userProfile.updatedAt || 0)) {
+                    userProfile = { ...userProfile, ...remote };
+                    localStorage.setItem('bp_profile', JSON.stringify(userProfile));
+                    updateWeightUI();
+                }
+            }, (err) => console.error('[設定同步] onSnapshot 錯誤', err));
+        }
+
+        // =========================================
         // [雲端帳號：登入 / 登出 / 狀態流程]
         // =========================================
         function startAuthFlow() {
@@ -1266,13 +1999,20 @@
             cloudSync.setStatus('off');
             fbAuth.onAuthStateChanged(async (user) => {
                 if (user) {
-                    recordsCol = fbDb.collection('users').doc(user.uid).collection('records');
+                    const userRef = fbDb.collection('users').doc(user.uid);
+                    recordsCol = userRef.collection('records');
+                    weightsCol = userRef.collection('weights');
+                    profileDoc = userRef.collection('meta').doc('profile');
                     cloudSync.setStatus('syncing');
-                    await cloudSync.migrateLocal(user.uid);   // 首次把本機資料推上雲
-                    cloudSync.start();                        // 啟動即時雙向同步
+                    await cloudSync.migrateLocal(user.uid);   // 首次把血壓資料推上雲
+                    await weightCloud.migrateLocal(user.uid); // 首次把體重資料推上雲
+                    cloudSync.start();                        // 血壓即時雙向同步
+                    weightCloud.start();                      // 體重即時雙向同步
+                    startProfileSync();                       // 個人設定同步
                 } else {
                     cloudSync.stop();
-                    recordsCol = null;
+                    weightCloud.stop();
+                    recordsCol = null; weightsCol = null; profileDoc = null;
                     cloudSync.setStatus('off');
                     showLoginDialog();
                 }
@@ -1320,6 +2060,7 @@
             }).then(async (res) => {
                 if (res.isConfirmed) {
                     cloudSync.stop();
+                    weightCloud.stop();
                     await fbAuth.signOut();
                     // onAuthStateChanged 會跳出登入視窗
                 }
@@ -3469,9 +4210,9 @@
             }
 
             const tzoffset = new Date().getTimezoneOffset() * 60000;
-            const cutoffTime = new Date(Date.now() - tzoffset).getTime() - (90 * 86400000);
-            
-            const recentRecords = recordsData.filter(r => new Date(r.date).getTime() >= cutoffTime); 
+            const cutoffTime = new Date(Date.now() - tzoffset).getTime() - (30 * 86400000);
+
+            const recentRecords = recordsData.filter(r => new Date(r.date).getTime() >= cutoffTime);
             const olderRecords = recordsData.filter(r => new Date(r.date).getTime() < cutoffTime);
             
             renderTableRecordsChunk([...recentRecords].reverse(), tableBody);
