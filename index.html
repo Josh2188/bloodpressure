@@ -2597,6 +2597,128 @@
             });
         }
 
+        // =========================================
+        // [當次即時比較] 與「同時段」歷史基準比較（早對早、晚對晚）
+        // =========================================
+        function analyzeReadingVsBaseline(record) {
+            const slot = record.timeSlot;  // '早' | '晚'
+            const cutoff = record.timestamp - 45 * 86400000;
+            // 同時段、近 45 天、排除本筆
+            const baseline = bpRecords.filter(r =>
+                r.id !== record.id && r.timeSlot === slot &&
+                r.timestamp >= cutoff && r.timestamp <= record.timestamp
+            );
+            const slotLabel = slot === '早' ? '早晨' : '晚間';
+            if (baseline.length < 3) {
+                return { enough: false, slotLabel, baselineCount: baseline.length };
+            }
+            const avg = arr => Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+            const avgSys = avg(baseline.map(r => r.sys));
+            const avgDia = avg(baseline.map(r => r.dia));
+            const hrBase = baseline.map(r => r.hr).filter(v => v !== null);
+            const avgHr = hrBase.length ? avg(hrBase) : null;
+            const deltaSys = record.sys - avgSys;
+            const deltaDia = record.dia - avgDia;
+            const deltaHr = (avgHr !== null && record.hr !== null) ? record.hr - avgHr : null;
+
+            // 相對個人基準的狀態
+            let status;
+            if (deltaSys >= 8 || deltaDia >= 5) status = 'high';
+            else if (deltaSys <= -8 || deltaDia <= -5) status = 'low';
+            else status = 'stable';
+
+            return { enough: true, slotLabel, baselineCount: baseline.length, avgSys, avgDia, avgHr, deltaSys, deltaDia, deltaHr, status };
+        }
+
+        function showInstantComparison(record) {
+            const a = analyzeReadingVsBaseline(record);
+            const cfg = getSwalConfig();
+            const fmtDelta = d => (d > 0 ? `+${d}` : `${d}`);
+
+            // 同時段基準還不夠
+            if (!a.enough) {
+                const tier = TIER_META[getBpTierKey(record.sys, record.dia)];
+                return Swal.fire({
+                    ...cfg,
+                    title: '已記錄',
+                    html: `<div class="text-left text-sm leading-relaxed">
+                        <div class="text-2xl font-black text-center mb-2">${record.sys}/${record.dia}${record.hr !== null ? ` <span class="text-sm text-slate-400">♥${record.hr}</span>` : ''}</div>
+                        <div class="text-center text-xs mb-2">本筆絕對分級：<strong>${tier.label}</strong></div>
+                        <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-2.5 text-xs text-slate-600 dark:text-slate-300">${a.slotLabel}的歷史紀錄還只有 ${a.baselineCount} 筆，累積到 3 筆以上，我就能幫你做「${a.slotLabel}對${a.slotLabel}」的個人化比較囉。</div>
+                    </div>`,
+                    confirmButtonText: '好', confirmButtonColor: '#10b981', timer: 3500, timerProgressBar: true
+                });
+            }
+
+            const styleMap = {
+                high:   { color: '#f43f5e', emoji: '🔺', title: `比平常${a.slotLabel}高一些`, badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+                low:    { color: '#3b82f6', emoji: '🔻', title: `比平常${a.slotLabel}低一些`, badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+                stable: { color: '#10b981', emoji: '✅', title: `和平常${a.slotLabel}差不多`, badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' }
+            };
+            const s = styleMap[a.status];
+
+            // 可能原因（僅供參考）
+            let reasonsTitle = '', reasons = [];
+            if (a.status === 'high') {
+                reasonsTitle = '比平常高，可能與這些有關（僅供參考）';
+                reasons = [
+                    '前一晚睡眠不足或睡不好',
+                    '壓力大、情緒緊張或剛忙完',
+                    '前一天吃太鹹（鈉攝取偏高）',
+                    '量測前喝了咖啡/茶、抽菸，或剛活動、講話、憋尿',
+                    '天氣變冷'
+                ];
+                if (record.timeSlot === '早' && !record.medicated) reasons.push('晨間尚未服藥（谷值偏高屬正常，可比對服藥後）');
+            } else if (a.status === 'low') {
+                reasonsTitle = '比平常低，通常不用太擔心（僅供參考）';
+                reasons = [
+                    '量測前充分休息、放鬆',
+                    '藥效正在作用中',
+                    '水分稍不足或空腹',
+                    '若伴隨頭暈、眼前發黑，請坐穩慢慢起身'
+                ];
+            } else {
+                reasonsTitle = '';
+                reasons = [];
+            }
+
+            const reasonsHtml = reasons.length ? `
+                <div class="mt-3 text-left">
+                    <div class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-1">${reasonsTitle}</div>
+                    <ul class="flex flex-col gap-1">
+                        ${reasons.map(r => `<li class="text-xs text-slate-600 dark:text-slate-300 flex gap-1.5"><span style="color:${s.color}">•</span><span class="flex-1">${r}</span></li>`).join('')}
+                    </ul>
+                </div>` : `<div class="mt-3 text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center">維持得不錯，繼續保持規律量測 👍</div>`;
+
+            const hrHtml = (a.deltaHr !== null) ? `　心率 ${fmtDelta(a.deltaHr)}` : '';
+
+            return Swal.fire({
+                ...cfg,
+                title: `${s.emoji} ${s.title}`,
+                html: `<div class="text-left">
+                    <div class="flex items-center justify-center gap-3 mb-2">
+                        <div class="text-center">
+                            <div class="text-[10px] text-slate-400 font-bold">這次</div>
+                            <div class="text-2xl font-black" style="color:${s.color}">${record.sys}/${record.dia}</div>
+                        </div>
+                        <div class="text-slate-300 text-xl">vs</div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-slate-400 font-bold">${a.slotLabel}平均</div>
+                            <div class="text-2xl font-black text-slate-500 dark:text-slate-300">${a.avgSys}/${a.avgDia}</div>
+                        </div>
+                    </div>
+                    <div class="text-center mb-1">
+                        <span class="inline-block text-xs font-bold px-2 py-0.5 rounded ${s.badge}">收縮 ${fmtDelta(a.deltaSys)}　舒張 ${fmtDelta(a.deltaDia)}${hrHtml} mmHg</span>
+                    </div>
+                    <div class="text-center text-[10px] text-slate-400">和你最近 ${a.baselineCount} 筆${a.slotLabel}紀錄相比</div>
+                    ${reasonsHtml}
+                    <div class="mt-3 text-[10px] text-slate-400 leading-relaxed text-center">單筆會自然波動，看趨勢比看單次更重要；若同時段連續多次偏高，建議回診評估。</div>
+                </div>`,
+                confirmButtonText: '知道了',
+                confirmButtonColor: s.color
+            });
+        }
+
         // 瀏覽器通知排程（App 開啟時生效）
         let notifTimerId = null;
         function scheduleNextNotification() {
@@ -3058,17 +3180,10 @@
             } else {
                 hapticFeedback(30);
                 showSaveSuccessAnim();
-                Swal.fire({
-                    ...getSwalConfig(),
-                    toast: true,
-                    position: 'top',
-                    icon: 'success',
-                    title: '已存檔',
-                    html: `<span class="text-[11px] font-bold px-2 py-0.5 rounded border ${quality.style}">${quality.label}</span>`,
-                    timer: 1400,
-                    showConfirmButton: false
-                });
-                setTimeout(() => checkMilestones(), 1500);
+                // 當次即時比較：與同時段歷史基準對照（早對早、晚對晚）
+                setTimeout(() => {
+                    showInstantComparison(validRecord).then(() => checkMilestones());
+                }, 650);
             }
         };
 
