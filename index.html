@@ -709,6 +709,9 @@
                         <i class="ph-bold ph-upload-simple"></i> 匯入
                         <input type="file" id="importFile" accept=".json" class="hidden" onchange="window.importData(event)">
                     </label>
+                    <button onclick="window.exportMarkdownReport()" class="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex-1 sm:flex-none justify-center">
+                        <i class="ph-bold ph-file-text"></i> AI 報告
+                    </button>
                 </div>
             </div>
         </section>
@@ -3555,7 +3558,118 @@
             reminderBox.classList.toggle('hidden', !showReminder);
         }
         
-        window.exportData = function() { 
+        window.exportMarkdownReport = function() {
+            if (bpRecords.length === 0) {
+                return Swal.fire({ ...getSwalConfig(), icon: 'info', title: '還沒有資料', text: '請先新增紀錄再匯出報告。', timer: 1500, showConfirmButton: false });
+            }
+
+            const tzoffset = new Date().getTimezoneOffset() * 60000;
+            const now = new Date();
+            const today = new Date(Date.now() - tzoffset).toISOString().slice(0, 10);
+
+            // 近 30 天
+            const cutoff30 = now.getTime() - 30 * 86400000;
+            const r30 = bpRecords.filter(r => r.timestamp >= cutoff30);
+
+            // 計算統計
+            function avg(arr) { return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null; }
+            function safeAvg(recs, field) {
+                const vals = recs.map(r => r[field]).filter(v => v !== null && v !== undefined);
+                return avg(vals);
+            }
+
+            const sysAll = bpRecords.map(r => r.sys);
+            const diaAll = bpRecords.map(r => r.dia);
+            const hrAll  = bpRecords.map(r => r.hr).filter(v => v !== null);
+            const sys30  = r30.map(r => r.sys);
+            const dia30  = r30.map(r => r.dia);
+            const hr30   = r30.map(r => r.hr).filter(v => v !== null);
+
+            const morn30  = r30.filter(r => r.timeSlot === '早');
+            const eve30   = r30.filter(r => r.timeSlot === '晚');
+            const mornSys = safeAvg(morn30, 'sys');
+            const mornDia = safeAvg(morn30, 'dia');
+            const eveSys  = safeAvg(eve30, 'sys');
+            const eveDia  = safeAvg(eve30, 'dia');
+
+            const ttr30 = r30.length ? Math.round(r30.filter(r => r.sys < 130 && r.dia < 80).length / r30.length * 100) : '--';
+            const medCount30 = r30.filter(r => r.medicated).length;
+            const streak = calculateCurrentStreak();
+
+            // 每日明細（降冪排列，最新在前）
+            const byDate = {};
+            for (const r of bpRecords) {
+                if (!byDate[r.date]) byDate[r.date] = [];
+                byDate[r.date].push(r);
+            }
+            const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+            // 分類標籤
+            function bpLabel(sys, dia) {
+                if (sys >= 160 || dia >= 100) return '⚠️ 高血壓第2期';
+                if (sys >= 140 || dia >= 90)  return '🔴 高血壓第1期';
+                if (sys >= 130 || dia >= 80)  return '🟠 高血壓前期';
+                if (sys >= 120)               return '🟡 偏高正常';
+                if (sys < 90  || dia < 60)    return '🔵 偏低';
+                return '🟢 正常';
+            }
+
+            // 建立 Markdown
+            let md = `# 血壓紀錄報告\n\n`;
+            md += `> 匯出時間：${now.toLocaleString('zh-TW')}　資料筆數：${bpRecords.length} 筆（全部）／${r30.length} 筆（近 30 天）\n\n`;
+            md += `---\n\n`;
+
+            md += `## 整體摘要（全部資料：${bpRecords.length} 筆）\n\n`;
+            md += `| 指標 | 數值 |\n|---|---|\n`;
+            md += `| 全期均壓 SYS / DIA | ${avg(sysAll)} / ${avg(diaAll)} mmHg |\n`;
+            if (hrAll.length) md += `| 平均心率 | ${avg(hrAll)} bpm |\n`;
+            md += `| 最高收縮壓 | ${Math.max(...sysAll)} mmHg |\n`;
+            md += `| 最低收縮壓 | ${Math.min(...sysAll)} mmHg |\n`;
+            md += `| 連續量測天數（streak） | ${streak} 天 |\n`;
+            md += `| 紀錄起始日 | ${bpRecords[0]?.date ?? '--'} |\n`;
+            md += `| 紀錄最後日 | ${bpRecords[bpRecords.length - 1]?.date ?? '--'} |\n\n`;
+
+            if (r30.length > 0) {
+                md += `## 近 30 天分析\n\n`;
+                md += `| 指標 | 數值 |\n|---|---|\n`;
+                md += `| 均壓 SYS / DIA | ${avg(sys30)} / ${avg(dia30)} mmHg |\n`;
+                if (hr30.length) md += `| 平均心率 | ${avg(hr30)} bpm |\n`;
+                if (mornSys) md += `| 早晨均壓 SYS / DIA | ${mornSys} / ${mornDia} mmHg |\n`;
+                if (eveSys)  md += `| 晚間均壓 SYS / DIA | ${eveSys} / ${eveDia} mmHg |\n`;
+                md += `| 達標率（< 130/80） | ${ttr30}% |\n`;
+                md += `| 服藥紀錄筆數 | ${medCount30} 筆 |\n`;
+                md += `| 最高收縮壓（近30日） | ${Math.max(...sys30)} mmHg |\n`;
+                md += `| 最低收縮壓（近30日） | ${Math.min(...sys30)} mmHg |\n\n`;
+            }
+
+            md += `## 每日完整紀錄\n\n`;
+            md += `| 日期 | 時段 | 收縮壓 | 舒張壓 | 心率 | 服藥 | 分類 |\n`;
+            md += `|---|---|---|---|---|---|---|\n`;
+
+            for (const date of sortedDates) {
+                for (const r of byDate[date].sort((a, b) => a.timestamp - b.timestamp)) {
+                    const slot = r.timeSlot === '早' ? '早晨' : r.timeSlot === '晚' ? '晚間' : r.timeSlot || '--';
+                    const hr   = r.hr !== null && r.hr !== undefined ? r.hr : '--';
+                    const med  = r.medicated ? '✅' : '';
+                    md += `| ${r.date} | ${slot} | ${r.sys} | ${r.dia} | ${hr} | ${med} | ${bpLabel(r.sys, r.dia)} |\n`;
+                }
+            }
+
+            md += `\n---\n_由「護心行動 x Mia」匯出_\n`;
+
+            // 下載
+            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `血壓報告_${today}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            Swal.fire({ ...getSwalConfig(), icon: 'success', title: 'AI 報告已匯出', text: '把 .md 檔直接貼給 AI 讀就行囉！', timer: 2000, showConfirmButton: false });
+        };
+
+        window.exportData = function() {
             if (bpRecords.length === 0) {
                 return Swal.fire({ ...getSwalConfig(), icon: 'info', title: '還沒有資料啦', text: '請先新增至少一筆紀錄再來備份。', timer: 1500, showConfirmButton: false });
             } 
