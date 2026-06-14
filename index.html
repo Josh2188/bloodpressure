@@ -11,7 +11,12 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
+
+    <!-- Firebase（雲端同步）compat 版，維持現有全域 script 寫法 -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
     <!-- Tailwind 設定 -->
     <script>
         tailwind.config = {
@@ -358,7 +363,12 @@
             </div>
 
             <!-- 切換按鈕 -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <!-- 雲端同步狀態 / 帳號 -->
+                <button onclick="window.openAccountMenu()" id="syncStatusBtn" class="hide-in-doctor-mode flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold transition-all duration-200" title="雲端同步">
+                    <span id="syncStatusDot" class="inline-block w-2 h-2 rounded-full" style="background-color:#cbd5e1;"></span>
+                    <span id="syncStatusText">未登入</span>
+                </button>
                 <button onclick="window.toggleDoctorMode()" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold transition-all duration-200" id="btnDoctor">
                     <i class="ph-bold ph-stethoscope"></i>
                     <span>醫生模式</span>
@@ -874,6 +884,46 @@
         let ttrChart = null, ppMapChart = null, scatterChart = null, longTermChart = null, monthlyChart = null, dipRateChart = null;
 
         // =========================================
+        // [雲端同步：Firebase 設定與全域狀態]
+        // =========================================
+        // ⚠️ 請填入你自己的 Firebase Web App 設定（Firebase Console → 專案設定 → 你的應用程式）
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkFppEAtDQwR3-MyWLqia1ipUnWcxjk6k",
+            authDomain: "blesspressure-44f92.firebaseapp.com",
+            projectId: "blesspressure-44f92",
+            storageBucket: "blesspressure-44f92.firebasestorage.app",
+            messagingSenderId: "283887828179",
+            appId: "1:283887828179:web:e6495cbd11795422ca2826"
+        };
+
+        let fbAuth = null;          // Firebase Auth 實例
+        let fbDb = null;            // Firestore 實例
+        let recordsCol = null;      // 登入後指向 users/{uid}/records
+        let cloudUnsub = null;      // onSnapshot 取消訂閱函式
+        let suppressPush = false;   // 套用遠端變更時避免回推的旗標
+        const FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
+
+        function initFirebase() {
+            if (!FIREBASE_ENABLED) {
+                console.warn('[雲端同步] 尚未填入 firebaseConfig，目前僅使用本機儲存。');
+                return false;
+            }
+            try {
+                firebase.initializeApp(firebaseConfig);
+                fbAuth = firebase.auth();
+                fbDb = firebase.firestore();
+                // 啟用離線持久化：離線時的寫入會排隊，恢復網路自動同步
+                fbDb.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+                    console.warn('[雲端同步] 離線持久化未啟用：', err.code);
+                });
+                return true;
+            } catch (err) {
+                console.error('[雲端同步] Firebase 初始化失敗：', err);
+                return false;
+            }
+        }
+
+        // =========================================
         // [系統初始化]
         // =========================================
         function applyTheme() {
@@ -888,9 +938,10 @@
         window.onload = () => {
             injectPWA();
             applyTheme();
-            loadLocalData();
+            loadLocalData();            // 先用本機快取即時顯示（離線優先）
             applyRandomGradient();
             resetMedicatedToggle();
+            startAuthFlow();            // 再啟動 Firebase 登入 / 雲端同步
 
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
@@ -979,15 +1030,17 @@
             if (sys < 70 || sys > 250 || dia < 40 || dia > 150) return null;
             if (hr !== null && (!Number.isFinite(hr) || hr < 40 || hr > 180)) return null;
             
-            return { 
-                id: raw.id || crypto.randomUUID(), 
-                date: logicalDate, 
-                timeSlot: timeSlot, 
-                sys: Math.round(sys), 
-                dia: Math.round(dia), 
-                hr: hr === null ? null : Math.round(hr), 
-                medicated: !!raw.medicated, 
-                timestamp: timestamp 
+            return {
+                id: raw.id || crypto.randomUUID(),
+                date: logicalDate,
+                timeSlot: timeSlot,
+                sys: Math.round(sys),
+                dia: Math.round(dia),
+                hr: hr === null ? null : Math.round(hr),
+                medicated: !!raw.medicated,
+                timestamp: timestamp,
+                updatedAt: Number(raw.updatedAt) || timestamp,  // 雲端同步：最後修改時間（最新者勝）
+                deleted: !!raw.deleted                          // 雲端同步：軟刪除 tombstone
             };
         }
         
@@ -1038,10 +1091,233 @@
             updateUI(); 
         }
         
-        function saveLocalData() { 
-            bpRecords = bpRecords.map(normalizeRecord).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp); 
-            localStorage.setItem('bp_tracker_data', JSON.stringify(bpRecords)); 
-            updateUI(); 
+        function saveLocalData() {
+            bpRecords = bpRecords.map(normalizeRecord).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
+            localStorage.setItem('bp_tracker_data', JSON.stringify(bpRecords));
+            updateUI();
+        }
+
+        // =========================================
+        // [雲端同步層] Cloud Sync (Firestore)
+        // 設計：localStorage 為離線快取（即時載入），Firestore 為跨裝置同步真實來源。
+        //   - mutation（新增/編輯/刪除）顯式呼叫 upsert/softDelete 推上雲端。
+        //   - onSnapshot 只把雲端變更拉回本機，從不回推 → 無迴圈。
+        //   - 衝突：以 updatedAt 最新者勝；刪除採軟刪除 tombstone（deleted:true）。
+        // =========================================
+        const cloudSync = {
+            // 設定狀態指示燈：synced / syncing / offline / off
+            setStatus(state, text) {
+                const dot = document.getElementById('syncStatusDot');
+                const label = document.getElementById('syncStatusText');
+                if (!dot) return;
+                const map = {
+                    synced:  { color: '#10b981', label: text || '已同步' },
+                    syncing: { color: '#f59e0b', label: text || '同步中…' },
+                    offline: { color: '#94a3b8', label: text || '離線' },
+                    off:     { color: '#cbd5e1', label: text || '未登入' },
+                    error:   { color: '#ef4444', label: text || '同步錯誤' }
+                };
+                const s = map[state] || map.off;
+                dot.style.backgroundColor = s.color;
+                if (label) label.innerText = s.label;
+            },
+
+            // 將單筆紀錄寫入雲端（含 updatedAt、deleted:false）
+            upsert(record) {
+                if (!recordsCol || !record || !record.id) return Promise.resolve();
+                const payload = {
+                    sys: record.sys, dia: record.dia,
+                    hr: record.hr === undefined ? null : record.hr,
+                    medicated: !!record.medicated,
+                    timestamp: record.timestamp,
+                    date: record.date, timeSlot: record.timeSlot,
+                    updatedAt: record.updatedAt || Date.now(),
+                    deleted: false
+                };
+                this.setStatus('syncing');
+                return recordsCol.doc(record.id).set(payload, { merge: true })
+                    .then(() => this.setStatus('synced'))
+                    .catch((err) => { console.error('[雲端同步] upsert 失敗', err); this.setStatus('error'); });
+            },
+
+            // 軟刪除：寫 tombstone 而非真的刪除 doc
+            softDelete(id) {
+                if (!recordsCol || !id) return Promise.resolve();
+                this.setStatus('syncing');
+                return recordsCol.doc(id).set({ deleted: true, updatedAt: Date.now() }, { merge: true })
+                    .then(() => this.setStatus('synced'))
+                    .catch((err) => { console.error('[雲端同步] softDelete 失敗', err); this.setStatus('error'); });
+            },
+
+            // 一次性遷移：登入後把本機既有紀錄全部推上雲端（每位使用者只跑一次）
+            async migrateLocal(uid) {
+                const flagKey = 'bp_cloud_migrated_' + uid;
+                if (localStorage.getItem(flagKey) === '1') return;
+                if (!recordsCol || bpRecords.length === 0) {
+                    localStorage.setItem(flagKey, '1');
+                    return;
+                }
+                try {
+                    this.setStatus('syncing', '首次上傳中…');
+                    // Firestore batch 上限 500，分批寫入
+                    for (let i = 0; i < bpRecords.length; i += 450) {
+                        const batch = fbDb.batch();
+                        bpRecords.slice(i, i + 450).forEach((r) => {
+                            batch.set(recordsCol.doc(r.id), {
+                                sys: r.sys, dia: r.dia,
+                                hr: r.hr === undefined ? null : r.hr,
+                                medicated: !!r.medicated,
+                                timestamp: r.timestamp,
+                                date: r.date, timeSlot: r.timeSlot,
+                                updatedAt: r.updatedAt || r.timestamp,
+                                deleted: false
+                            }, { merge: true });
+                        });
+                        await batch.commit();
+                    }
+                    localStorage.setItem(flagKey, '1');
+                    this.setStatus('synced');
+                } catch (err) {
+                    console.error('[雲端同步] 首次遷移失敗', err);
+                    this.setStatus('error');
+                }
+            },
+
+            // 啟動即時訂閱
+            start() {
+                if (!recordsCol) return;
+                if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+                this.setStatus('syncing');
+                cloudUnsub = recordsCol.onSnapshot((snap) => {
+                    const remoteDocs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+                    applyRemoteChanges(remoteDocs);
+                    this.setStatus(snap.metadata.fromCache ? 'offline' : 'synced');
+                }, (err) => {
+                    console.error('[雲端同步] onSnapshot 錯誤', err);
+                    this.setStatus('error');
+                });
+            },
+
+            stop() {
+                if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+            }
+        };
+
+        // 將雲端變更套用到本機 bpRecords（不回推）
+        // 規則：deleted → 移除；否則 updatedAt 較新或本機沒有 → 取代/新增。
+        function applyRemoteChanges(remoteDocs) {
+            const localById = new Map(bpRecords.map((r) => [r.id, r]));
+            let changed = false;
+
+            for (const doc of remoteDocs) {
+                if (!doc || !doc.id) continue;
+                const local = localById.get(doc.id);
+
+                if (doc.deleted) {
+                    if (local) { localById.delete(doc.id); changed = true; }
+                    continue;
+                }
+                const incoming = normalizeRecord(doc);
+                if (!incoming) continue;
+                if (!local || (incoming.updatedAt || 0) > (local.updatedAt || 0)) {
+                    localById.set(doc.id, incoming);
+                    changed = true;
+                }
+            }
+
+            if (!changed) return;
+            suppressPush = true;
+            try {
+                bpRecords = Array.from(localById.values());
+                saveLocalData();   // 只存本機快取 + 刷新 UI
+            } finally {
+                suppressPush = false;
+            }
+        }
+
+        // =========================================
+        // [雲端帳號：登入 / 登出 / 狀態流程]
+        // =========================================
+        function startAuthFlow() {
+            if (!initFirebase()) {
+                cloudSync.setStatus('off', '純本機');
+                return;
+            }
+            cloudSync.setStatus('off');
+            fbAuth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    recordsCol = fbDb.collection('users').doc(user.uid).collection('records');
+                    cloudSync.setStatus('syncing');
+                    await cloudSync.migrateLocal(user.uid);   // 首次把本機資料推上雲
+                    cloudSync.start();                        // 啟動即時雙向同步
+                } else {
+                    cloudSync.stop();
+                    recordsCol = null;
+                    cloudSync.setStatus('off');
+                    showLoginDialog();
+                }
+            });
+        }
+
+        function showLoginDialog() {
+            Swal.fire({
+                ...getSwalConfig(),
+                title: '登入雲端同步',
+                html: `<p class="text-sm text-slate-500 dark:text-slate-400">用 Google 帳號登入，安全又方便。血壓資料會自動同步到所有裝置。</p>`,
+                showCancelButton: true,
+                confirmButtonText: '用 Google 登入',
+                cancelButtonText: '取消',
+                confirmButtonColor: '#6366f1',
+                allowOutsideClick: false
+            }).then(async (res) => {
+                if (!res.isConfirmed) return;
+                try {
+                    cloudSync.setStatus('syncing', '登入中…');
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await fbAuth.signInWithPopup(provider);
+                    // 成功後由 onAuthStateChanged 接手
+                } catch (err) {
+                    await Swal.fire({ ...getSwalConfig(), icon: 'error', title: '登入失敗', text: translateAuthError(err) });
+                    showLoginDialog();
+                }
+            });
+        }
+
+        window.openAccountMenu = function() {
+            if (!FIREBASE_ENABLED) {
+                return Swal.fire({ ...getSwalConfig(), icon: 'info', title: '尚未設定雲端', text: '請先在 index.html 填入 firebaseConfig 才能使用雲端同步。' });
+            }
+            const user = fbAuth && fbAuth.currentUser;
+            if (!user) return showLoginDialog();
+            Swal.fire({
+                ...getSwalConfig(),
+                title: '雲端帳號',
+                html: `<p class="text-sm text-slate-600 dark:text-slate-300">目前登入：<br><strong>${user.email || user.uid}</strong></p>`,
+                showCancelButton: true,
+                confirmButtonText: '登出',
+                cancelButtonText: '關閉',
+                confirmButtonColor: '#ef4444'
+            }).then(async (res) => {
+                if (res.isConfirmed) {
+                    cloudSync.stop();
+                    await fbAuth.signOut();
+                    // onAuthStateChanged 會跳出登入視窗
+                }
+            });
+        };
+
+        function translateAuthError(err) {
+            const code = err && err.code ? err.code : '';
+            const map = {
+                'auth/invalid-email': 'Email 格式不正確。',
+                'auth/user-not-found': '查無此帳號，請先註冊。',
+                'auth/wrong-password': '密碼錯誤。',
+                'auth/invalid-credential': 'Email 或密碼錯誤。',
+                'auth/email-already-in-use': '此 Email 已註冊，請直接登入。',
+                'auth/weak-password': '密碼太短，請至少 6 碼。',
+                'auth/network-request-failed': '網路連線失敗，請稍後再試。'
+            };
+            return map[code] || (err && err.message) || '發生未知錯誤。';
         }
 
         // =========================================
@@ -1779,6 +2055,7 @@
             
             bpRecords.push(validRecord);
             saveLocalData();
+            cloudSync.upsert(validRecord);
 
             document.getElementById('inputData').value = '';
             resetMedicatedToggle();
@@ -1865,11 +2142,16 @@
                     } 
                     return updatedRecord;
                 }
-            }).then((res) => { 
-                if (res.isConfirmed) { 
-                    bpRecords[index] = res.value; 
-                    saveLocalData(); 
-                    Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: '修改完成', timer: 1500, showConfirmButton: false }); 
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    // 以 id 重新定位（避免雲端快照重排造成 index 失效）
+                    const idx = bpRecords.findIndex(r => r.id === id);
+                    if (idx === -1) return;
+                    res.value.updatedAt = Date.now();
+                    bpRecords[idx] = res.value;
+                    saveLocalData();
+                    cloudSync.upsert(res.value);
+                    Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: '修改完成', timer: 1500, showConfirmButton: false });
                 }
             });
         };
@@ -1878,9 +2160,10 @@
             const index = bpRecords.findIndex(r => r.id === id); 
             if (index === -1) return; 
             
-            deletedCache = bpRecords.splice(index, 1)[0]; 
+            deletedCache = bpRecords.splice(index, 1)[0];
             saveLocalData();
-            
+            cloudSync.softDelete(id);   // 軟刪除 tombstone
+
             Swal.fire({
                 toast: true, 
                 position: 'bottom-end', 
@@ -1893,9 +2176,12 @@
                 timerProgressBar: true
             }).then((result) => {
                 if (result.isConfirmed && deletedCache) {
+                    deletedCache.updatedAt = Date.now();   // 復原 → 蓋過先前的刪除 tombstone
                     bpRecords.push(deletedCache);
+                    const restored = deletedCache;
                     deletedCache = null;
                     saveLocalData();
+                    cloudSync.upsert(restored);   // 寫回 deleted:false
                     Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: '紀錄已復原', timer: 1500, showConfirmButton: false });
                 }
             });
