@@ -422,7 +422,7 @@
                 </div>
                 <div class="flex flex-col items-end gap-1.5">
                     <span id="latestHeroTier" class="text-xs font-black px-3 py-1 rounded-full bg-white/25 backdrop-blur-sm">--</span>
-                    <span id="latestHeroMed" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 flex items-center gap-1"><i class="ph-fill ph-pill"></i>已服藥</span>
+                    <span id="latestHeroMed" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 flex items-center gap-1"><i class="ph-fill ph-pill"></i>今日已服藥</span>
                 </div>
             </div>
             <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -511,8 +511,8 @@
                 <div class="flex items-center gap-2">
                     <label class="medicated-toggle cursor-pointer relative flex items-center">
                         <input type="checkbox" id="medicatedCheck" class="peer sr-only">
-                        <div class="flex items-center gap-1 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 transition-all text-[10px] font-bold uppercase tracking-wider">
-                            <i class="ph-fill ph-pill text-slate-400 transition-colors"></i> 我已經吃藥了
+                        <div class="flex items-center gap-1 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 transition-all text-[10px] font-bold uppercase tracking-wider" title="勾選代表：量測這一刻，今天的降壓藥已經吃了。早上若在服藥前量測，請保持不勾。">
+                            <i class="ph-fill ph-pill text-slate-400 transition-colors"></i> 今日已服藥
                         </div>
                     </label>
                     <button onclick="window.showMeasurementGuide()" class="text-[10px] flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider font-bold">
@@ -527,6 +527,23 @@
                 </button>
             </div>
             <p class="text-center text-[10px] text-slate-400 mt-2 tracking-wider">盲打輸入：收縮壓 / 舒張壓 / 心率</p>
+            <p class="text-center text-[10px] text-slate-400 mt-1 tracking-wide">💊「今日已服藥」=量測當下今天的藥已吃了；早上服藥前量測請勿勾選</p>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- Mia 智能總結（讀全部資料的長篇趨勢解讀） -->
+        <!-- ========================================== -->
+        <section id="smartReadingCard" class="hidden bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-slate-900 rounded-2xl p-4 shadow-sm border border-indigo-100 dark:border-indigo-900/50 hide-in-doctor-mode transition-all duration-300">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-sparkle text-indigo-500 text-lg"></i>
+                    <h2 class="text-base font-bold">Mia 智能總結</h2>
+                </div>
+                <button onclick="window.exportMarkdownReport()" class="text-[10px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors font-bold active:scale-95">
+                    <i class="ph-bold ph-file-text"></i> 給 AI 看
+                </button>
+            </div>
+            <div id="smartReadingContent"></div>
         </section>
 
         <!-- ========================================== -->
@@ -624,12 +641,12 @@
                 </div>
                 <div class="grid grid-cols-3 gap-1.5 items-stretch">
                     <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
-                        <div class="text-[9px] text-slate-500 font-bold">已服藥</div>
+                        <div class="text-[9px] text-slate-500 font-bold">服藥後</div>
                         <div class="text-sm font-black text-emerald-600 dark:text-emerald-400" id="medOnAvg">--</div>
                         <div class="text-[9px] text-slate-400" id="medOnCount">0 筆</div>
                     </div>
                     <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
-                        <div class="text-[9px] text-slate-500 font-bold">未服藥</div>
+                        <div class="text-[9px] text-slate-500 font-bold">服藥前</div>
                         <div class="text-sm font-black text-slate-600 dark:text-slate-300" id="medOffAvg">--</div>
                         <div class="text-[9px] text-slate-400" id="medOffCount">0 筆</div>
                     </div>
@@ -2008,8 +2025,237 @@
             localStorage.setItem('onboarded', '1');
         }
 
+        // =========================================
+        // [智能解讀引擎] Smart Reading Engine
+        // 讀全部資料 → 整合既有臨床函式 → 產生長篇中文趨勢解讀與建議。
+        // 純本地、離線、不外傳；輸出供主畫面卡片、AI 報告(.md)共用。
+        // =========================================
+        function generateSmartReading(allRecords) {
+            const records = (allRecords || []).slice().sort((a, b) => a.timestamp - b.timestamp);
+            if (records.length < 3) {
+                return { hasData: false };
+            }
+
+            const now = Date.now();
+            const mean = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+            const round = v => v === null ? null : Math.round(v);
+            const sd = arr => {
+                if (arr.length < 2) return null;
+                const m = mean(arr);
+                return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
+            };
+
+            // 時間切片
+            const r30  = records.filter(r => r.timestamp >= now - 30 * 86400000);
+            const rPrev30 = records.filter(r => r.timestamp < now - 30 * 86400000 && r.timestamp >= now - 60 * 86400000);
+            const base = r30.length >= 5 ? r30 : records;  // 近30天太少就用全部
+
+            const sysB = base.map(r => r.sys), diaB = base.map(r => r.dia);
+            const hrB  = base.map(r => r.hr).filter(v => v !== null);
+            const avgSys = round(mean(sysB)), avgDia = round(mean(diaB)), avgHr = round(mean(hrB));
+            const sysSd = round(sd(sysB));
+
+            const morn = base.filter(r => r.timeSlot === '早');
+            const eve  = base.filter(r => r.timeSlot === '晚');
+            const mSys = round(mean(morn.map(r => r.sys))), mDia = round(mean(morn.map(r => r.dia)));
+            const eSys = round(mean(eve.map(r => r.sys))),  eDia = round(mean(eve.map(r => r.dia)));
+
+            const ttr = base.length ? Math.round(base.filter(r => r.sys < 130 && r.dia < 80).length / base.length * 100) : 0;
+            const maxSys = Math.max(...sysB), minSys = Math.min(...sysB);
+            const streak = calculateCurrentStreak();
+
+            // 趨勢：近30 vs 前30
+            let trend = null;
+            if (r30.length >= 5 && rPrev30.length >= 5) {
+                const cur = round(mean(r30.map(r => r.sys)));
+                const prev = round(mean(rPrev30.map(r => r.sys)));
+                trend = { delta: cur - prev, cur, prev };
+            }
+
+            // 重用既有臨床分析
+            const dip = classifyDippingPattern(records);
+            const medAnalysis = (mSys !== null && eSys !== null) ? analyzeMED(mSys, eSys) : null;
+            const rpp = analyzeHrRpp(base);
+            const medEffect = analyzeMedicationEffect(records);
+            const adherence = analyze722Adherence(records);
+
+            // ---- 總評 verdict ----
+            const has48hCrisis = records.filter(r => r.timestamp >= now - 48 * 3600000 && (r.sys >= 160 || r.dia >= 100)).length >= 2;
+            let verdict;
+            if (has48hCrisis) {
+                verdict = { level: 'crisis', emoji: '🚨', title: '需要立即就醫', summary: `過去 48 小時內出現多次危機值（≥160/100），代表血壓控制嚴重不穩，請今日內就醫。` };
+            } else if (avgSys >= 140 || avgDia >= 90) {
+                verdict = { level: 'high', emoji: '🔴', title: '血壓偏高，需要積極處理', summary: `這段期間平均 ${avgSys}/${avgDia}，已達高血壓範圍。建議盡快回診討論用藥與生活調整。` };
+            } else if (avgSys >= 130 || avgDia >= 80) {
+                verdict = { level: 'elevated', emoji: '🟠', title: '血壓偏高一點，可再收緊', summary: `平均 ${avgSys}/${avgDia} 落在高血壓前期，達標率 ${ttr}%。離理想還差一點，持續追蹤＋生活調整有機會拉回。` };
+            } else {
+                verdict = { level: 'good', emoji: '🟢', title: '控制得不錯，維持就好', summary: `平均 ${avgSys}/${avgDia}、達標率 ${ttr}%，整體穩定。重點是維持現在的習慣。` };
+            }
+
+            // ---- 關鍵發現 paragraphs ----
+            const paragraphs = [];
+
+            // 總覽
+            let ov = `這份解讀涵蓋你 <strong>${records.length}</strong> 筆紀錄`;
+            ov += base === r30 ? `，主要看近 30 天（${r30.length} 筆）。` : `（資料區間較短，先看整體）。`;
+            ov += ` 平均血壓 <strong>${avgSys}/${avgDia}</strong>`;
+            if (avgHr !== null) ov += `、平均心率 ${avgHr} bpm`;
+            ov += `，收縮壓區間 ${minSys}–${maxSys}。`;
+            paragraphs.push({ icon: '📊', title: '整體概況', text: ov });
+
+            // 趨勢
+            if (trend) {
+                let t;
+                if (trend.delta <= -3) t = `好消息：近 30 天收縮壓平均 ${trend.cur}，比前一個月（${trend.prev}）<strong>下降了 ${Math.abs(trend.delta)} mmHg</strong>，方向正確，繼續保持。`;
+                else if (trend.delta >= 3) t = `留意：近 30 天收縮壓平均 ${trend.cur}，比前一個月（${trend.prev}）<strong>上升了 ${trend.delta} mmHg</strong>。回想最近是否有壓力、睡眠、飲食或天氣變化，必要時回診。`;
+                else t = `近 30 天收縮壓平均 ${trend.cur}，和前一個月（${trend.prev}）幾乎持平，狀態穩定。`;
+                paragraphs.push({ icon: '📈', title: '長期趨勢', text: t });
+            }
+
+            // 早晚節律 + dipping
+            if (mSys !== null && eSys !== null) {
+                let r = `早晨均壓 <strong>${mSys}/${mDia}</strong>、晚間 <strong>${eSys}/${eDia}</strong>`;
+                if (medAnalysis) r += `，早晚收縮壓差 ${medAnalysis.med} mmHg（${medAnalysis.grade}）。`;
+                if (dip.sufficient) {
+                    const dipName = { reverse: '反勺型（夜間反而升高，風險最高）', non: '不降型 Non-Dipper', normal: '正常勺型（理想）', extreme: '極端降壓型' }[dip.pattern];
+                    r += ` 夜間降壓型態為「<strong>${dipName}</strong>」（平均降壓率 ${dip.avgPct}%）。`;
+                    if (dip.pattern === 'reverse' || dip.pattern === 'non') r += ' 此型態與心血管風險相關，建議回診時主動提及，並排查睡眠呼吸中止與腎功能。';
+                } else {
+                    r += ` 早晚配對天數還不足（需 ${dip.totalNeeded || 5} 天），暫無法分類夜間降壓型態，請持續每天早晚各量一次。`;
+                }
+                paragraphs.push({ icon: '🌗', title: '早晚節律', text: r });
+            }
+
+            // 藥效
+            if (medEffect.hasComparison) {
+                paragraphs.push({ icon: '💊', title: '服藥效益', text: `服藥後平均 ${medEffect.onAvg.sys}/${medEffect.onAvg.dia}、服藥前 ${medEffect.offAvg.sys}/${medEffect.offAvg.dia}，` + medEffect.note.replace(/<\/?strong>/g, '') });
+            }
+
+            // 心率/RPP
+            if (rpp.hasData && (rpp.rppGrade !== '正常' || rpp.hrGrade !== '正常')) {
+                paragraphs.push({ icon: '❤️', title: '心率與心肌負荷', text: rpp.note });
+            }
+
+            // 變異度
+            if (sysSd !== null && sysSd >= 15) {
+                paragraphs.push({ icon: '🌊', title: '血壓變異度', text: `收縮壓標準差 ${sysSd} mmHg，起伏偏大。血壓變異度高本身也是心血管風險因子，建議固定每天量測的時間、姿勢與情境，讓數值更具可比性。` });
+            }
+
+            // ---- 行動建議 ----
+            const actions = [];
+            if (verdict.level === 'crisis') actions.push('今日內就醫，攜帶這份紀錄給醫師。');
+            if (avgDia >= 80 || (mDia !== null && mDia >= 82)) actions.push('舒張壓偏高：減少鹽分與酒精、規律有氧運動、留意睡眠品質。');
+            if (medAnalysis && medAnalysis.med >= 15) actions.push('早晚差偏大：與醫師討論晨間藥效覆蓋（是否換長效或分次給藥）。');
+            if (dip.sufficient && (dip.pattern === 'reverse' || dip.pattern === 'non')) actions.push('夜間血壓降不夠：排查睡眠呼吸中止（打鼾/白天嗜睡）與腎功能。');
+            if (adherence.zeroDays >= 2) actions.push(`近 7 天有 ${adherence.zeroDays} 天沒量：用「設定提醒」建立每天早晚量測習慣。`);
+            if (rpp.hasData && rpp.avgHr > 80) actions.push('靜息心率偏快：減少咖啡因、增加有氧運動、管理壓力。');
+            if (actions.length === 0) actions.push('維持目前的量測與生活習慣，定期回診即可。');
+            actions.push('本解讀僅供參考，不能取代醫師診斷，請以回診評估為準。');
+
+            // ---- 異常日清單（近 60 天，最多 12 筆）----
+            const anomalyDays = [];
+            const recentForAnomaly = records.filter(r => r.timestamp >= now - 60 * 86400000);
+            for (const r of recentForAnomaly.slice().reverse()) {
+                const flags = getAnomalyFlags(r);
+                if (flags.length && anomalyDays.length < 12) {
+                    anomalyDays.push({ date: r.date, slot: r.timeSlot, sys: r.sys, dia: r.dia, hr: r.hr, flags });
+                }
+            }
+
+            return {
+                hasData: true,
+                verdict, paragraphs, actions, anomalyDays,
+                stats: { avgSys, avgDia, avgHr, ttr, maxSys, minSys, streak, count: records.length, periodCount: base.length }
+            };
+        }
+
+        // 單筆異常旗標（供智能解讀與醫生模式共用）
+        function getAnomalyFlags(r) {
+            const flags = [];
+            if (r.sys >= 160 || r.dia >= 100) flags.push('危機值');
+            else if (r.sys >= 140 || r.dia >= 90) flags.push('高血壓');
+            else if (r.sys >= 130) flags.push('SYS偏高');
+            else if (r.dia >= 80) flags.push('DIA偏高');
+            if (r.sys < 90 || r.dia < 60) flags.push('偏低');
+            if (r.hr !== null && r.hr >= 100) flags.push('心率快');
+            if (r.hr !== null && r.hr < 50) flags.push('心率慢');
+            const pp = r.sys - r.dia;
+            if (pp >= 60) flags.push('脈壓大');
+            else if (pp > 0 && pp < 30) flags.push('脈壓小');
+            return flags;
+        }
+
+        // 渲染主畫面「Mia 智能總結」卡片
+        function renderSmartReading() {
+            const card = document.getElementById('smartReadingCard');
+            const content = document.getElementById('smartReadingContent');
+            if (!card || !content) return;
+
+            const data = generateSmartReading(bpRecords);
+            if (!data.hasData) {
+                card.classList.add('hidden');
+                return;
+            }
+            card.classList.remove('hidden');
+
+            const vColor = {
+                crisis:   'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+                high:     'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
+                elevated: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+                good:     'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+            }[data.verdict.level];
+
+            let html = `
+                <div class="rounded-xl border p-3 mb-3 ${vColor}">
+                    <div class="font-black text-sm mb-0.5">${data.verdict.emoji} ${data.verdict.title}</div>
+                    <div class="text-xs leading-relaxed opacity-90">${data.verdict.summary}</div>
+                </div>
+                <div class="flex flex-col gap-2.5 mb-3">
+            `;
+            for (const p of data.paragraphs) {
+                html += `
+                    <div class="flex gap-2 items-start">
+                        <span class="text-base leading-none mt-0.5">${p.icon}</span>
+                        <div class="flex-1">
+                            <div class="text-[11px] font-black text-slate-700 dark:text-slate-200 mb-0.5">${p.title}</div>
+                            <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${p.text}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+
+            // 行動建議
+            html += `
+                <div class="rounded-xl bg-white/70 dark:bg-slate-800/50 border border-indigo-100 dark:border-indigo-900/40 p-3 mb-2">
+                    <div class="text-[11px] font-black text-indigo-700 dark:text-indigo-300 mb-1.5 flex items-center gap-1"><i class="ph-fill ph-list-checks"></i> 建議行動</div>
+                    <ul class="flex flex-col gap-1">
+            `;
+            for (const a of data.actions) {
+                html += `<li class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed flex gap-1.5"><span class="text-indigo-400 mt-0.5">▸</span><span class="flex-1">${a}</span></li>`;
+            }
+            html += `</ul></div>`;
+
+            // 異常日清單（摺疊）
+            if (data.anomalyDays.length) {
+                html += `
+                    <details class="rounded-xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 p-3">
+                        <summary class="text-[11px] font-black text-rose-700 dark:text-rose-300 cursor-pointer flex items-center gap-1"><i class="ph-fill ph-warning"></i> 近期值得注意的紀錄（${data.anomalyDays.length}）</summary>
+                        <div class="mt-2 flex flex-col gap-1">
+                `;
+                for (const d of data.anomalyDays) {
+                    const hr = d.hr !== null ? ` HR${d.hr}` : '';
+                    html += `<div class="text-[11px] text-slate-600 dark:text-slate-300 flex justify-between gap-2"><span>${d.date} ${d.slot} ${d.sys}/${d.dia}${hr}</span><span class="text-rose-500 font-bold">${d.flags.join('・')}</span></div>`;
+                }
+                html += `</div></details>`;
+            }
+
+            content.innerHTML = html;
+        }
+
         function updateUI() {
             const representativeRecords = getRepresentativeRecords();
+            renderSmartReading();
             updateLatestHero();
             updateAbnormalAlert();
             updateTrendCardTint();
@@ -2110,7 +2356,7 @@
                             <div class="flex-1 flex items-end pb-1">
                                 <label class="flex items-center gap-2 cursor-pointer p-2 border border-slate-300 dark:border-slate-700 rounded-lg w-full bg-slate-50 dark:bg-slate-900">
                                     <input type="checkbox" id="editMedicated" ${record.medicated ? 'checked' : ''} class="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-slate-200 dark:bg-slate-800 border-none outline-none">
-                                    <span class="text-sm font-bold text-slate-600 dark:text-slate-300">已服藥</span>
+                                    <span class="text-sm font-bold text-slate-600 dark:text-slate-300">今日已服藥</span>
                                 </label>
                             </div>
                         </div>
@@ -3339,7 +3585,13 @@
                         ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
                         : 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800';
                     const medBadge = latestRawRecord.medicated
-                        ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"><i class="ph-fill ph-pill"></i>已服藥</span>'
+                        ? '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"><i class="ph-fill ph-pill"></i>今日已服藥</span>'
+                        : '';
+                    // 異常值標記（醫生模式專用，一眼看出哪幾筆超標）
+                    const anomalyFlags = getAnomalyFlags(record);
+                    const anomalyBadges = anomalyFlags.length
+                        ? `<div class="flex flex-wrap gap-1 mt-1 justify-end">${anomalyFlags.map(f =>
+                            `<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800"><i class="ph-fill ph-warning-circle"></i> ${f}</span>`).join('')}</div>`
                         : '';
                     mainRowDiv.className += ` py-3.5 px-2 sm:px-4 rounded-xl ml-2 ${docRowBg} ${docBorderLeft}`;
                     mainRowDiv.innerHTML = `
@@ -3353,10 +3605,13 @@
                             </div>
                             ${medBadge ? `<div class="pl-1">${medBadge}</div>` : ''}
                         </div>
-                        <div class="flex gap-4 sm:gap-6 md:gap-8 text-2xl font-black flex-1 justify-end">
-                            <div class="flex flex-col items-center w-14"><span class="text-xs text-slate-400 mb-1 font-bold">收縮</span><span class="${docSysColor}">${record.sys}</span></div>
-                            <div class="flex flex-col items-center w-14"><span class="text-xs text-slate-400 mb-1 font-bold">舒張</span><span class="${docDiaColor}">${record.dia}</span></div>
-                            <div class="flex flex-col items-center w-14"><span class="text-xs text-slate-400 mb-1 font-bold">心率</span><span class="text-slate-500 dark:text-slate-400">${hrDisplay}</span></div>
+                        <div class="flex flex-col items-end flex-1 gap-1">
+                            <div class="flex gap-4 sm:gap-6 md:gap-8 text-2xl font-black w-full justify-end">
+                                <div class="flex flex-col items-center w-14"><span class="text-xs text-slate-400 mb-1 font-bold">收縮</span><span class="${docSysColor}">${record.sys}</span></div>
+                                <div class="flex flex-col items-center w-14"><span class="text-xs text-slate-400 mb-1 font-bold">舒張</span><span class="${docDiaColor}">${record.dia}</span></div>
+                                <div class="flex flex-col items-center w-14"><span class="text-xs text-slate-400 mb-1 font-bold">心率</span><span class="text-slate-500 dark:text-slate-400">${hrDisplay}</span></div>
+                            </div>
+                            ${anomalyBadges}
                         </div>
                     `;
                 } else {
@@ -3616,8 +3871,32 @@
 
             // 建立 Markdown
             let md = `# 血壓紀錄報告\n\n`;
-            md += `> 匯出時間：${now.toLocaleString('zh-TW')}　資料筆數：${bpRecords.length} 筆（全部）／${r30.length} 筆（近 30 天）\n\n`;
+            md += `> 匯出時間：${now.toLocaleString('zh-TW')}　資料筆數：${bpRecords.length} 筆（全部）／${r30.length} 筆（近 30 天）\n`;
+            md += `> 「服藥」欄位語意：✅ = 量測當下今天的降壓藥已服用（服藥後）；空白 = 服藥前（多為晨起未服藥的谷值）。\n\n`;
             md += `---\n\n`;
+
+            // ---- 智能解讀（與 App 主畫面同一引擎）----
+            const sr = generateSmartReading(bpRecords);
+            if (sr.hasData) {
+                md += `## 智能解讀\n\n`;
+                md += `**${sr.verdict.emoji} ${sr.verdict.title}**　${sr.verdict.summary.replace(/<\/?strong>/g, '**')}\n\n`;
+                for (const p of sr.paragraphs) {
+                    md += `- **${p.icon} ${p.title}**：${p.text.replace(/<\/?strong>/g, '**')}\n`;
+                }
+                md += `\n**建議行動**\n\n`;
+                for (const a of sr.actions) md += `- ${a}\n`;
+                md += `\n`;
+                if (sr.anomalyDays.length) {
+                    md += `**近期值得注意的紀錄**\n\n`;
+                    md += `| 日期 | 時段 | 數值 | 旗標 |\n|---|---|---|---|\n`;
+                    for (const d of sr.anomalyDays) {
+                        const hr = d.hr !== null ? ` HR${d.hr}` : '';
+                        md += `| ${d.date} | ${d.slot} | ${d.sys}/${d.dia}${hr} | ${d.flags.join('、')} |\n`;
+                    }
+                    md += `\n`;
+                }
+                md += `---\n\n`;
+            }
 
             md += `## 整體摘要（全部資料：${bpRecords.length} 筆）\n\n`;
             md += `| 指標 | 數值 |\n|---|---|\n`;
