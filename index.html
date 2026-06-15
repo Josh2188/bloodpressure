@@ -558,6 +558,17 @@
             <div id="smartReadingContent"></div>
         </section>
 
+        <section id="feedbackStatsCard" class="hidden bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-all duration-300">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph-fill ph-chat-teardrop-dots text-rose-500 text-lg"></i>
+                    <h2 class="text-base font-bold">近 30 天我的回饋</h2>
+                </div>
+                <span id="feedbackStatsMeta" class="text-[10px] font-bold text-slate-400">--</span>
+            </div>
+            <div id="feedbackStatsContent"></div>
+        </section>
+
         <!-- ========================================== -->
         <!-- 臨床解析報告區塊 -->
         <!-- ========================================== -->
@@ -1025,6 +1036,34 @@
         let weightChartInstance = null;
         let currentModule = 'bp';   // 'bp' | 'weight'
         let userProfile = { height: null, sex: null, goalWeight: null, goalDate: null };
+        let bpFeedbackCustomOptions = [];
+        let bpFeedbackOptionsUpdatedAt = 0;
+        const BP_FEEDBACK_OTHER_LABEL = '其他：';
+        const BP_FEEDBACK_PRESET_OPTIONS = [
+            '吃太重鹹',
+            '吃過量',
+            '水量攝取不足',
+            '水量補充足夠',
+            '吃很清淡',
+            '執行 168',
+            '睡眠不足（低於 4 小時）',
+            '睡眠不足（5-6小時)',
+            '睡眠不足（6-7小時)',
+            '睡眠充足（7 小時以上）',
+            '睡眠充足（9 小時以上）',
+            '運動 30 分鐘以上',
+            '運動 60 分鐘以上',
+            '外出高溫曝曬',
+            '熬夜（超過1點睡覺）',
+            '熬夜（超過2點睡覺）',
+            '熬夜（超過3點睡覺）',
+            '晚上 11 點前就寢',
+            '晚上 12 點前就寢',
+            '體感溫度上升',
+            '體感温度下降',
+            '身體不適（如頭暈、感冒、過敏等）',
+            BP_FEEDBACK_OTHER_LABEL
+        ];
 
         // =========================================
         // [雲端同步：Firebase 設定與全域狀態]
@@ -1048,6 +1087,8 @@
         let weightUnsub = null;     // 體重 onSnapshot 取消訂閱
         let profileDoc = null;      // 登入後指向 users/{uid}/meta/profile
         let profileUnsub = null;    // 個人設定 onSnapshot 取消訂閱
+        let feedbackDoc = null;     // 登入後指向 users/{uid}/meta/feedback
+        let feedbackUnsub = null;   // 回饋自訂選項 onSnapshot 取消訂閱
         const FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
 
         function initFirebase() {
@@ -1532,6 +1573,7 @@
             injectPWA();
             applyTheme();
             loadProfile();              // 身高/目標等個人設定
+            loadFeedbackOptions();      // 血壓回饋自訂選項
             loadWeightData();           // 體重本機快取
             loadLocalData();            // 先用本機快取即時顯示（離線優先）
             updateWeightUI();
@@ -1603,6 +1645,72 @@
             }
             return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; 
         }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[ch]));
+        }
+
+        function sanitizeFeedbackText(value) {
+            return String(value ?? '').replace(/\s+/g, ' ').trim();
+        }
+
+        function dedupeStrings(list) {
+            const seen = new Set();
+            const out = [];
+            (list || []).forEach((item) => {
+                if (!item || seen.has(item)) return;
+                seen.add(item);
+                out.push(item);
+            });
+            return out;
+        }
+
+        function normalizeFeedbackReasons(raw) {
+            const list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? [raw] : []);
+            return dedupeStrings(
+                list
+                    .map(sanitizeFeedbackText)
+                    .filter(Boolean)
+                    .filter((reason) => reason !== BP_FEEDBACK_OTHER_LABEL)
+            );
+        }
+
+        function isPresetFeedbackReason(reason) {
+            return BP_FEEDBACK_PRESET_OPTIONS.includes(reason);
+        }
+
+        function normalizeCustomFeedbackOptions(raw) {
+            return dedupeStrings(
+                (Array.isArray(raw) ? raw : [])
+                    .map(sanitizeFeedbackText)
+                    .filter(Boolean)
+                    .filter((reason) => !isPresetFeedbackReason(reason))
+            );
+        }
+
+        function getFeedbackOptionCatalog(extraReasons = []) {
+            return dedupeStrings([
+                ...BP_FEEDBACK_PRESET_OPTIONS,
+                ...normalizeCustomFeedbackOptions(bpFeedbackCustomOptions),
+                ...normalizeCustomFeedbackOptions(extraReasons)
+            ]);
+        }
+
+        function inferCustomFeedbackOptionsFromRecords(records) {
+            const custom = [];
+            (records || []).forEach((record) => {
+                normalizeFeedbackReasons(record?.feedbackReasons).forEach((reason) => {
+                    if (!isPresetFeedbackReason(reason)) custom.push(reason);
+                });
+            });
+            return normalizeCustomFeedbackOptions(custom);
+        }
         
         function inferTimeSlot(record) { 
             if (record?.timeSlot === '早' || record?.timeSlot === '晚') return record.timeSlot; 
@@ -1634,6 +1742,7 @@
                 dia: Math.round(dia),
                 hr: hr === null ? null : Math.round(hr),
                 medicated: !!raw.medicated,
+                feedbackReasons: normalizeFeedbackReasons(raw.feedbackReasons),
                 timestamp: timestamp,
                 updatedAt: Number(raw.updatedAt) || timestamp,  // 雲端同步：最後修改時間（最新者勝）
                 deleted: !!raw.deleted                          // 雲端同步：軟刪除 tombstone
@@ -1690,6 +1799,31 @@
         function saveLocalData() {
             bpRecords = bpRecords.map(normalizeRecord).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
             localStorage.setItem('bp_tracker_data', JSON.stringify(bpRecords));
+            updateUI();
+        }
+
+        function loadFeedbackOptions() {
+            try {
+                const raw = localStorage.getItem('bp_feedback_options');
+                if (raw) bpFeedbackCustomOptions = normalizeCustomFeedbackOptions(JSON.parse(raw));
+            } catch (error) {
+                bpFeedbackCustomOptions = [];
+                console.error('Failed to load feedback options', error);
+            }
+            bpFeedbackOptionsUpdatedAt = Number(localStorage.getItem('bp_feedback_options_updated_at') || 0);
+        }
+
+        function setFeedbackCustomOptions(nextOptions, { pushRemote = true, updatedAt = Date.now() } = {}) {
+            bpFeedbackCustomOptions = normalizeCustomFeedbackOptions(nextOptions);
+            bpFeedbackOptionsUpdatedAt = Number(updatedAt) || Date.now();
+            localStorage.setItem('bp_feedback_options', JSON.stringify(bpFeedbackCustomOptions));
+            localStorage.setItem('bp_feedback_options_updated_at', String(bpFeedbackOptionsUpdatedAt));
+            if (pushRemote && feedbackDoc) {
+                feedbackDoc.set({
+                    bpCustomReasons: bpFeedbackCustomOptions,
+                    updatedAt: bpFeedbackOptionsUpdatedAt
+                }, { merge: true }).catch((err) => console.error('[雲端同步] feedback 選項寫入失敗', err));
+            }
             updateUI();
         }
 
@@ -1791,6 +1925,7 @@
                     sys: record.sys, dia: record.dia,
                     hr: record.hr === undefined ? null : record.hr,
                     medicated: !!record.medicated,
+                    feedbackReasons: normalizeFeedbackReasons(record.feedbackReasons),
                     timestamp: record.timestamp,
                     date: record.date, timeSlot: record.timeSlot,
                     updatedAt: record.updatedAt || Date.now(),
@@ -1829,6 +1964,7 @@
                                 sys: r.sys, dia: r.dia,
                                 hr: r.hr === undefined ? null : r.hr,
                                 medicated: !!r.medicated,
+                                feedbackReasons: normalizeFeedbackReasons(r.feedbackReasons),
                                 timestamp: r.timestamp,
                                 date: r.date, timeSlot: r.timeSlot,
                                 updatedAt: r.updatedAt || r.timestamp,
@@ -1988,6 +2124,30 @@
             }, (err) => console.error('[設定同步] onSnapshot 錯誤', err));
         }
 
+        function startFeedbackOptionsSync() {
+            if (!feedbackDoc) return;
+            if (feedbackUnsub) { feedbackUnsub(); feedbackUnsub = null; }
+            feedbackUnsub = feedbackDoc.onSnapshot((snap) => {
+                const remote = snap.data() || {};
+                const remoteUpdatedAt = Number(remote.updatedAt) || 0;
+                const remoteOptions = normalizeCustomFeedbackOptions(remote.bpCustomReasons);
+
+                if (!snap.exists) {
+                    if (bpFeedbackCustomOptions.length > 0) {
+                        setFeedbackCustomOptions(bpFeedbackCustomOptions, {
+                            pushRemote: true,
+                            updatedAt: bpFeedbackOptionsUpdatedAt || Date.now()
+                        });
+                    }
+                    return;
+                }
+
+                if (remoteUpdatedAt >= bpFeedbackOptionsUpdatedAt) {
+                    setFeedbackCustomOptions(remoteOptions, { pushRemote: false, updatedAt: remoteUpdatedAt || Date.now() });
+                }
+            }, (err) => console.error('[設定同步] feedback onSnapshot 錯誤', err));
+        }
+
         // =========================================
         // [雲端帳號：登入 / 登出 / 狀態流程]
         // =========================================
@@ -2003,16 +2163,20 @@
                     recordsCol = userRef.collection('records');
                     weightsCol = userRef.collection('weights');
                     profileDoc = userRef.collection('meta').doc('profile');
+                    feedbackDoc = userRef.collection('meta').doc('feedback');
                     cloudSync.setStatus('syncing');
                     await cloudSync.migrateLocal(user.uid);   // 首次把血壓資料推上雲
                     await weightCloud.migrateLocal(user.uid); // 首次把體重資料推上雲
                     cloudSync.start();                        // 血壓即時雙向同步
                     weightCloud.start();                      // 體重即時雙向同步
                     startProfileSync();                       // 個人設定同步
+                    startFeedbackOptionsSync();               // 回饋選項同步
                 } else {
                     cloudSync.stop();
                     weightCloud.stop();
-                    recordsCol = null; weightsCol = null; profileDoc = null;
+                    if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+                    if (feedbackUnsub) { feedbackUnsub(); feedbackUnsub = null; }
+                    recordsCol = null; weightsCol = null; profileDoc = null; feedbackDoc = null;
                     cloudSync.setStatus('off');
                     showLoginDialog();
                 }
@@ -2061,6 +2225,8 @@
                 if (res.isConfirmed) {
                     cloudSync.stop();
                     weightCloud.stop();
+                    if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+                    if (feedbackUnsub) { feedbackUnsub(); feedbackUnsub = null; }
                     await fbAuth.signOut();
                     // onAuthStateChanged 會跳出登入視窗
                 }
@@ -2630,10 +2796,158 @@
             return { enough: true, slotLabel, baselineCount: baseline.length, avgSys, avgDia, avgHr, deltaSys, deltaDia, deltaHr, status };
         }
 
+        function buildFeedbackSelectorHtml({ selectorId, selectedReasons = [], required = false, helperText = '' }) {
+            const normalizedSelected = normalizeFeedbackReasons(selectedReasons);
+            const selectedSet = new Set(normalizedSelected);
+            const options = getFeedbackOptionCatalog(normalizedSelected);
+            return `
+                <div class="mt-4 rounded-xl border border-rose-100 dark:border-rose-900/40 bg-rose-50/70 dark:bg-rose-950/10 p-3 text-left">
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <i class="ph-fill ph-chat-teardrop-dots text-rose-500"></i>
+                        <div class="text-[11px] font-black text-rose-700 dark:text-rose-300">我的回饋</div>
+                    </div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">自己覺得這次量測最可能受哪些因素影響？可複選。</div>
+                    <div id="${selectorId}" class="mt-2" data-feedback-selector="${selectorId}" data-feedback-required="${required ? '1' : '0'}">
+                        <div class="flex flex-wrap gap-2">
+                            ${options.map((option) => `
+                                <button
+                                    type="button"
+                                    data-feedback-chip
+                                    data-feedback-value="${escapeHtml(option)}"
+                                    aria-pressed="${selectedSet.has(option) ? 'true' : 'false'}"
+                                >${escapeHtml(option)}</button>
+                            `).join('')}
+                        </div>
+                        <div class="hidden mt-2" data-feedback-other-wrap>
+                            <input type="text" data-feedback-other-input class="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 text-sm text-slate-700 dark:text-slate-200 outline-none focus:border-rose-400" placeholder="請輸入其他理由">
+                        </div>
+                        <div class="mt-2 text-[10px] ${required ? 'text-rose-500 dark:text-rose-300' : 'text-slate-400'}">${helperText || (required ? '至少選 1 項；若選「其他：」，一定要輸入理由。' : '可編輯這筆紀錄的回饋；若選「其他：」，一定要輸入理由。')}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function syncFeedbackSelectorVisuals(root) {
+            if (!root) return;
+            root.querySelectorAll('[data-feedback-chip]').forEach((chip) => {
+                const active = chip.getAttribute('aria-pressed') === 'true';
+                chip.className = active
+                    ? 'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold border border-rose-500 bg-rose-500 text-white shadow-sm transition-all'
+                    : 'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all';
+            });
+            const otherChip = [...root.querySelectorAll('[data-feedback-chip]')].find((chip) => chip.dataset.feedbackValue === BP_FEEDBACK_OTHER_LABEL);
+            const otherWrap = root.querySelector('[data-feedback-other-wrap]');
+            if (otherWrap) otherWrap.classList.toggle('hidden', !(otherChip && otherChip.getAttribute('aria-pressed') === 'true'));
+        }
+
+        function initFeedbackSelector(root) {
+            if (!root) return;
+            root.querySelectorAll('[data-feedback-chip]').forEach((chip) => {
+                chip.addEventListener('click', () => {
+                    const nextState = chip.getAttribute('aria-pressed') !== 'true';
+                    chip.setAttribute('aria-pressed', nextState ? 'true' : 'false');
+                    syncFeedbackSelectorVisuals(root);
+                    if (nextState && chip.dataset.feedbackValue === BP_FEEDBACK_OTHER_LABEL) {
+                        const input = root.querySelector('[data-feedback-other-input]');
+                        if (input) setTimeout(() => input.focus(), 0);
+                    }
+                });
+            });
+            syncFeedbackSelectorVisuals(root);
+        }
+
+        function collectFeedbackSelectorValue(root, { required = false } = {}) {
+            if (!root) return { reasons: [] };
+            const selectedValues = [...root.querySelectorAll('[data-feedback-chip]')]
+                .filter((chip) => chip.getAttribute('aria-pressed') === 'true')
+                .map((chip) => chip.dataset.feedbackValue);
+            const hasOther = selectedValues.includes(BP_FEEDBACK_OTHER_LABEL);
+            const otherInput = root.querySelector('[data-feedback-other-input]');
+            const otherText = sanitizeFeedbackText(otherInput?.value || '');
+            const reasons = selectedValues.filter((value) => value !== BP_FEEDBACK_OTHER_LABEL);
+            let customOptions = [];
+
+            if (hasOther) {
+                if (!otherText) return { error: '選了「其他：」就要輸入原因喔' };
+                const existingMatch = getFeedbackOptionCatalog(reasons).find((option) => option === otherText);
+                const finalOther = existingMatch || otherText;
+                reasons.push(finalOther);
+                if (!isPresetFeedbackReason(finalOther) && !bpFeedbackCustomOptions.includes(finalOther)) {
+                    customOptions = [finalOther];
+                }
+            }
+
+            const normalizedReasons = normalizeFeedbackReasons(reasons);
+            if (required && normalizedReasons.length === 0) {
+                return { error: '請至少選 1 項回饋' };
+            }
+            return { reasons: normalizedReasons, customOptions };
+        }
+
+        function persistRecordFeedback(recordId, reasons, customOptions = []) {
+            const idx = bpRecords.findIndex((record) => record.id === recordId);
+            if (idx === -1) return null;
+            const updatedRecord = normalizeRecord({
+                ...bpRecords[idx],
+                feedbackReasons: reasons,
+                updatedAt: Date.now()
+            });
+            if (!updatedRecord) return null;
+            bpRecords[idx] = updatedRecord;
+            if (customOptions.length) {
+                setFeedbackCustomOptions([...bpFeedbackCustomOptions, ...customOptions]);
+            }
+            saveLocalData();
+            cloudSync.upsert(updatedRecord);
+            return updatedRecord;
+        }
+
+        function finalizeFeedbackFromSelector(record, selectorId, { required = false } = {}) {
+            const selectorRoot = document.getElementById(selectorId);
+            const result = collectFeedbackSelectorValue(selectorRoot, { required });
+            if (result.error) {
+                Swal.showValidationMessage(result.error);
+                return false;
+            }
+            const saved = persistRecordFeedback(record.id, result.reasons, result.customOptions);
+            if (!saved) {
+                Swal.showValidationMessage('這筆紀錄找不到了，請重試一次');
+                return false;
+            }
+            return saved;
+        }
+
+        function openMeasurementFeedback(record, { mode = 'crisis', selectedReasons = [] } = {}) {
+            const selectorId = `measurementFeedback_${mode}`;
+            return Swal.fire({
+                ...getSwalConfig(),
+                title: mode === 'crisis' ? '補充一下這次量測狀態' : '我的回饋',
+                html: `
+                    <div class="text-left text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                        ${mode === 'crisis'
+                            ? '剛剛那筆數值需要特別留意。也麻煩你補一下自己覺得最可能的影響因素，之後我才能給你更貼身的提醒。'
+                            : '補充一下這次量測前後的狀態，之後我可以更懂你的波動規律。'}
+                    </div>
+                    ${buildFeedbackSelectorHtml({
+                        selectorId,
+                        selectedReasons,
+                        required: true
+                    })}
+                `,
+                confirmButtonText: '完成回饋',
+                confirmButtonColor: mode === 'crisis' ? '#dc2626' : '#e11d48',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => initFeedbackSelector(document.getElementById(selectorId)),
+                preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: true })
+            });
+        }
+
         function showInstantComparison(record) {
             const a = analyzeReadingVsBaseline(record);
             const cfg = getSwalConfig();
             const fmtDelta = d => (d > 0 ? `+${d}` : `${d}`);
+            const selectorId = `measurementFeedback_${record.id}`;
 
             // 同時段基準還不夠
             if (!a.enough) {
@@ -2645,8 +2959,14 @@
                         <div class="text-2xl font-black text-center mb-2">${record.sys}/${record.dia}${record.hr !== null ? ` <span class="text-sm text-slate-400">♥${record.hr}</span>` : ''}</div>
                         <div class="text-center text-xs mb-2">本筆絕對分級：<strong>${tier.label}</strong></div>
                         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-2.5 text-xs text-slate-600 dark:text-slate-300">${a.slotLabel}的歷史紀錄還只有 ${a.baselineCount} 筆，累積到 3 筆以上，我就能幫你做「${a.slotLabel}對${a.slotLabel}」的個人化比較囉。</div>
+                        ${buildFeedbackSelectorHtml({ selectorId, selectedReasons: record.feedbackReasons, required: true })}
                     </div>`,
-                    confirmButtonText: '好', confirmButtonColor: '#10b981', timer: 3500, timerProgressBar: true
+                    confirmButtonText: '完成回饋',
+                    confirmButtonColor: '#10b981',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => initFeedbackSelector(document.getElementById(selectorId)),
+                    preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: true })
                 });
             }
 
@@ -2713,9 +3033,14 @@
                     <div class="text-center text-[10px] text-slate-400">和你最近 ${a.baselineCount} 筆${a.slotLabel}紀錄相比</div>
                     ${reasonsHtml}
                     <div class="mt-3 text-[10px] text-slate-400 leading-relaxed text-center">單筆會自然波動，看趨勢比看單次更重要；若同時段連續多次偏高，建議回診評估。</div>
+                    ${buildFeedbackSelectorHtml({ selectorId, selectedReasons: record.feedbackReasons, required: true })}
                 </div>`,
-                confirmButtonText: '知道了',
-                confirmButtonColor: s.color
+                confirmButtonText: '完成回饋',
+                confirmButtonColor: s.color,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => initFeedbackSelector(document.getElementById(selectorId)),
+                preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: true })
             });
         }
 
@@ -2764,6 +3089,88 @@
             document.getElementById('statsAvg').innerHTML = `${avgSys}<span class="text-[10px] opacity-60">/</span>${avgDia}`;
             document.getElementById('statsMax').innerHTML = `${maxRec.sys}<span class="text-[10px] opacity-60">/</span>${maxRec.dia}`;
             document.getElementById('statsMin').innerHTML = `${minRec.sys}<span class="text-[10px] opacity-60">/</span>${minRec.dia}`;
+        }
+
+        function renderFeedbackBadgesHTML(reasons, size = 'sm') {
+            const items = normalizeFeedbackReasons(reasons);
+            if (!items.length) return '';
+            const cls = size === 'xs'
+                ? 'text-[9px] px-1.5 py-0.5'
+                : 'text-[10px] px-2 py-0.5';
+            return `
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    ${items.map((reason) => `<span class="${cls} inline-flex items-center rounded-full bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-300 border border-rose-100 dark:border-rose-900/50 font-bold">${escapeHtml(reason)}</span>`).join('')}
+                </div>
+            `;
+        }
+
+        function getRecentFeedbackStats(days = 30) {
+            const cutoff = Date.now() - days * 86400000;
+            const records = bpRecords.filter((record) => record.timestamp >= cutoff);
+            const withFeedback = records.filter((record) => normalizeFeedbackReasons(record.feedbackReasons).length > 0);
+            const counts = new Map();
+
+            withFeedback.forEach((record) => {
+                normalizeFeedbackReasons(record.feedbackReasons).forEach((reason) => {
+                    counts.set(reason, (counts.get(reason) || 0) + 1);
+                });
+            });
+
+            const items = [...counts.entries()]
+                .map(([reason, count]) => ({
+                    reason,
+                    count,
+                    percentage: withFeedback.length ? Math.round((count / withFeedback.length) * 100) : 0
+                }))
+                .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason, 'zh-Hant'));
+
+            return {
+                days,
+                totalRecords: records.length,
+                feedbackRecordCount: withFeedback.length,
+                totalSelections: items.reduce((sum, item) => sum + item.count, 0),
+                items
+            };
+        }
+
+        function renderFeedbackStats() {
+            const card = document.getElementById('feedbackStatsCard');
+            const content = document.getElementById('feedbackStatsContent');
+            const meta = document.getElementById('feedbackStatsMeta');
+            if (!card || !content || !meta) return;
+
+            const stats = getRecentFeedbackStats(30);
+            if (!stats.feedbackRecordCount || !stats.items.length) {
+                card.classList.add('hidden');
+                return;
+            }
+
+            card.classList.remove('hidden');
+            meta.textContent = `${stats.feedbackRecordCount} 筆有回饋`;
+            const topItems = stats.items.slice(0, 5);
+
+            content.innerHTML = `
+                <div class="grid gap-2">
+                    ${topItems.map((item, index) => `
+                        <div class="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="inline-flex w-6 h-6 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black">${index + 1}</span>
+                                    <span class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">${escapeHtml(item.reason)}</span>
+                                </div>
+                                <span class="text-xs font-black text-rose-500 dark:text-rose-300">${item.count} 次</span>
+                            </div>
+                            <div class="mt-2 flex items-center gap-2">
+                                <div class="flex-1 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-rose-400 to-orange-400" style="width:${Math.max(item.percentage, 4)}%"></div>
+                                </div>
+                                <span class="text-[10px] font-bold text-slate-400">${item.percentage}%</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <p class="mt-3 text-[10px] text-slate-400 leading-relaxed">統計近 30 天有填寫「我的回饋」的量測紀錄；單筆可複選，所以總次數會高於紀錄筆數。</p>
+            `;
         }
 
         // 月份篩選
@@ -3123,6 +3530,7 @@
             updateAbnormalAlert();
             updateTrendCardTint();
             updateOverviewStats();
+            renderFeedbackStats();
             populateMonthFilter();
             updateComplianceStatus();
             updateTrendAnalysis(representativeRecords);
@@ -3176,7 +3584,9 @@
 
             if (isCrisis) {
                 hapticFeedback([60, 80, 60, 80, 60]);
-                showCrisisAlert(validRecord.sys, validRecord.dia);
+                showCrisisAlert(validRecord.sys, validRecord.dia)
+                    .then(() => openMeasurementFeedback(validRecord, { mode: 'crisis' }))
+                    .then(() => checkMilestones());
             } else {
                 hapticFeedback(30);
                 showSaveSuccessAnim();
@@ -3191,6 +3601,7 @@
             const index = bpRecords.findIndex(r => r.id === id); 
             if (index === -1) return; 
             const record = bpRecords[index];
+            const feedbackSelectorId = `editFeedback_${record.id}`;
             
             Swal.fire({
                 ...getSwalConfig(), 
@@ -3230,8 +3641,14 @@
                                 <input type="number" id="editHr" value="${record.hr !== null ? record.hr : ''}" class="w-full mt-1 p-2 border border-slate-300 dark:border-slate-700 rounded-lg font-black text-center text-xl bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 outline-none focus:border-slate-400" placeholder="未填">
                             </div>
                         </div>
+                        ${buildFeedbackSelectorHtml({
+                            selectorId: feedbackSelectorId,
+                            selectedReasons: record.feedbackReasons,
+                            required: false
+                        })}
                     </div>
                 `,
+                didOpen: () => initFeedbackSelector(document.getElementById(feedbackSelectorId)),
                 preConfirm: () => {
                     const updatedRecord = normalizeRecord({
                         ...record, 
@@ -3244,18 +3661,31 @@
                     if (!updatedRecord) { 
                         Swal.showValidationMessage('數值異常或超出合理範圍'); 
                         return false; 
-                    } 
-                    return updatedRecord;
+                    }
+                    const feedbackResult = collectFeedbackSelectorValue(document.getElementById(feedbackSelectorId), { required: false });
+                    if (feedbackResult.error) {
+                        Swal.showValidationMessage(feedbackResult.error);
+                        return false;
+                    }
+                    updatedRecord.feedbackReasons = feedbackResult.reasons;
+                    return { updatedRecord, customOptions: feedbackResult.customOptions };
                 }
             }).then((res) => {
                 if (res.isConfirmed) {
                     // 以 id 重新定位（避免雲端快照重排造成 index 失效）
                     const idx = bpRecords.findIndex(r => r.id === id);
                     if (idx === -1) return;
-                    res.value.updatedAt = Date.now();
-                    bpRecords[idx] = res.value;
+                    const updatedRecord = normalizeRecord({
+                        ...res.value.updatedRecord,
+                        updatedAt: Date.now()
+                    });
+                    if (!updatedRecord) return;
+                    bpRecords[idx] = updatedRecord;
+                    if (res.value.customOptions?.length) {
+                        setFeedbackCustomOptions([...bpFeedbackCustomOptions, ...res.value.customOptions]);
+                    }
                     saveLocalData();
-                    cloudSync.upsert(res.value);
+                    cloudSync.upsert(updatedRecord);
                     Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: '修改完成', timer: 1500, showConfirmButton: false });
                 }
             });
@@ -4473,6 +4903,7 @@
                 } else {
                     mainRowDiv.className += ' py-2.5 px-3 rounded-lg';
                     const healthStatus = getHealthStatus(record.sys, record.dia);
+                    const feedbackHtml = renderFeedbackBadgesHTML(latestRawRecord.feedbackReasons);
                     
                     mainRowDiv.innerHTML = `
                         <div class="flex flex-col flex-1">
@@ -4483,6 +4914,7 @@
                                 <span class="${sysColorClass}">${record.sys}</span><span class="text-slate-300 font-normal">/</span><span class="${diaColorClass}">${record.dia}</span>
                                 <span class="text-sm text-slate-400 ml-1.5 flex items-center gap-0.5"><i class="ph-fill ph-heartbeat"></i>${hrDisplay}</span>
                             </div>
+                            ${feedbackHtml}
                         </div>
                         <div class="flex items-center">
                             ${buttonsHtml}
@@ -4518,9 +4950,14 @@
                         detailsHtml += `
                             <div class="flex justify-between items-center px-3 py-1.5 border-b border-slate-100 dark:border-slate-800/50 opacity-70 hover:opacity-100 transition-opacity">
                                 <div class="flex gap-2.5 items-center flex-1">
-                                    <span class="text-xs text-slate-400 w-10">${rTime}</span>
-                                    <span class="text-sm font-bold text-slate-500 dark:text-slate-400 w-16 flex items-center">${rawItem.sys} <span class="text-[10px] text-slate-300 dark:text-slate-600 font-normal mx-0.5">/</span> ${rawItem.dia}</span>
-                                    <span class="text-[10px] text-slate-400 font-medium ml-1">HR ${rawItem.hr !== null ? rawItem.hr : '--'}</span>
+                                    <div class="flex-1">
+                                        <div class="flex gap-2.5 items-center">
+                                            <span class="text-xs text-slate-400 w-10">${rTime}</span>
+                                            <span class="text-sm font-bold text-slate-500 dark:text-slate-400 w-16 flex items-center">${rawItem.sys} <span class="text-[10px] text-slate-300 dark:text-slate-600 font-normal mx-0.5">/</span> ${rawItem.dia}</span>
+                                            <span class="text-[10px] text-slate-400 font-medium ml-1">HR ${rawItem.hr !== null ? rawItem.hr : '--'}</span>
+                                        </div>
+                                        ${renderFeedbackBadgesHTML(rawItem.feedbackReasons, 'xs')}
+                                    </div>
                                 </div>
                                 <div class="flex items-center">
                                     ${innerButtonsHtml}
@@ -4706,6 +5143,7 @@
             const ttr30 = r30.length ? Math.round(r30.filter(r => r.sys < 130 && r.dia < 80).length / r30.length * 100) : '--';
             const medCount30 = r30.filter(r => r.medicated).length;
             const streak = calculateCurrentStreak();
+            const feedbackStats30 = getRecentFeedbackStats(30);
 
             // 每日明細（降冪排列，最新在前）
             const byDate = {};
@@ -4754,6 +5192,16 @@
                 md += `---\n\n`;
             }
 
+            if (feedbackStats30.feedbackRecordCount > 0 && feedbackStats30.items.length > 0) {
+                md += `## 近 30 天回饋統計\n\n`;
+                md += `> 有填回饋的量測：${feedbackStats30.feedbackRecordCount} 筆（近 30 天總量測 ${feedbackStats30.totalRecords} 筆）\n\n`;
+                md += `| 排名 | 原因 | 次數 | 佔有回饋紀錄比例 |\n|---|---|---:|---:|\n`;
+                feedbackStats30.items.slice(0, 10).forEach((item, index) => {
+                    md += `| ${index + 1} | ${item.reason} | ${item.count} | ${item.percentage}% |\n`;
+                });
+                md += `\n---\n\n`;
+            }
+
             md += `## 整體摘要（全部資料：${bpRecords.length} 筆）\n\n`;
             md += `| 指標 | 數值 |\n|---|---|\n`;
             md += `| 全期均壓 SYS / DIA | ${avg(sysAll)} / ${avg(diaAll)} mmHg |\n`;
@@ -4778,15 +5226,16 @@
             }
 
             md += `## 每日完整紀錄\n\n`;
-            md += `| 日期 | 時段 | 收縮壓 | 舒張壓 | 心率 | 服藥 | 分類 |\n`;
-            md += `|---|---|---|---|---|---|---|\n`;
+            md += `| 日期 | 時段 | 收縮壓 | 舒張壓 | 心率 | 服藥 | 我的回饋 | 分類 |\n`;
+            md += `|---|---|---|---|---|---|---|---|\n`;
 
             for (const date of sortedDates) {
                 for (const r of byDate[date].sort((a, b) => a.timestamp - b.timestamp)) {
                     const slot = r.timeSlot === '早' ? '早晨' : r.timeSlot === '晚' ? '晚間' : r.timeSlot || '--';
                     const hr   = r.hr !== null && r.hr !== undefined ? r.hr : '--';
                     const med  = r.medicated ? '✅' : '';
-                    md += `| ${r.date} | ${slot} | ${r.sys} | ${r.dia} | ${hr} | ${med} | ${bpLabel(r.sys, r.dia)} |\n`;
+                    const feedback = normalizeFeedbackReasons(r.feedbackReasons).join('、') || '--';
+                    md += `| ${r.date} | ${slot} | ${r.sys} | ${r.dia} | ${hr} | ${med} | ${feedback} | ${bpLabel(r.sys, r.dia)} |\n`;
                 }
             }
 
@@ -4809,13 +5258,18 @@
                 return Swal.fire({ ...getSwalConfig(), icon: 'info', title: '還沒有資料啦', text: '請先新增至少一筆紀錄再來備份。', timer: 1500, showConfirmButton: false });
             } 
             
-            const payload = { version: 2, exportedAt: new Date().toISOString(), records: bpRecords };
+            const payload = {
+                version: 3,
+                exportedAt: new Date().toISOString(),
+                records: bpRecords,
+                feedbackOptions: bpFeedbackCustomOptions
+            };
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a'); 
             a.href = url; 
-            a.download = `護心行動_血壓紀錄_v2_${new Date().toISOString().slice(0, 10)}.json`; 
+            a.download = `護心行動_血壓紀錄_v3_${new Date().toISOString().slice(0, 10)}.json`; 
             a.click(); 
             URL.revokeObjectURL(url);
             
@@ -4835,6 +5289,11 @@
                 const text = await file.text();
                 const payload = JSON.parse(text); 
                 const incomingRaw = Array.isArray(payload) ? payload : (payload.records || []); 
+                const importedOptions = normalizeCustomFeedbackOptions(
+                    Array.isArray(payload?.feedbackOptions)
+                        ? payload.feedbackOptions
+                        : inferCustomFeedbackOptionsFromRecords(incomingRaw)
+                );
                 
                 if (!incomingRaw.length) throw new Error('檔案內沒有找到紀錄');
                 
@@ -4856,10 +5315,19 @@
                 if (res.isConfirmed) { 
                     if (res.value) {
                         bpRecords = mergedResult.records; 
+                        setFeedbackCustomOptions([
+                            ...bpFeedbackCustomOptions,
+                            ...importedOptions,
+                            ...inferCustomFeedbackOptionsFromRecords(bpRecords)
+                        ]);
                         saveLocalData(); 
                         Swal.fire({ ...getSwalConfig(), icon: 'success', title: '資料整併完成', html: `新增 <strong>${mergedResult.added}</strong> 筆<br>略過重複 <strong>${mergedResult.skipped}</strong> 筆<br>無效格式 <strong>${mergedResult.invalid}</strong> 筆`, timer: 2500, showConfirmButton: false }); 
                     } else {
                         bpRecords = incomingRaw.map(normalizeRecord).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
+                        setFeedbackCustomOptions([
+                            ...importedOptions,
+                            ...inferCustomFeedbackOptionsFromRecords(bpRecords)
+                        ]);
                         saveLocalData();
                         Swal.fire({ ...getSwalConfig(), icon: 'success', title: '整碗換新囉！', text: `目前系統裡有 ${bpRecords.length} 筆紀錄。`, timer: 2000, showConfirmButton: false });
                     }
