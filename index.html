@@ -1026,6 +1026,13 @@
         let bpRecords = [];
         let deletedCache = null;
         let chartInstance = null;
+        /** 代表性紀錄快取（getRepresentativeRecords 運算較重，資料未變則重用） */
+        let repRecordsCache = null;
+        let repRecordsCacheRev = -1;
+        let bpDataRevision = 0;
+        let uiUpdateScheduled = false;
+        let bpChartDataSig = '';
+        let bpChartThemeDark = null;
         let isDoctorMode = false;
         const PATIENT_BIRTHDATE = new Date('1980-01-02');
         let ttrChart = null, ppMapChart = null, scatterChart = null, longTermChart = null, monthlyChart = null, dipRateChart = null;
@@ -1609,6 +1616,16 @@
                 });
             }
 
+            const bpInput = document.getElementById('inputData');
+            if (bpInput) {
+                bpInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        window.processInput();
+                    }
+                });
+            }
+
             scheduleNextNotification();
             setTimeout(() => showOnboarding(), 400);
         };
@@ -1792,14 +1809,16 @@
             } catch (error) { 
                 bpRecords = []; 
                 console.error('Failed to load local data', error);
-            } 
-            updateUI(); 
+            }
+            invalidateBpDerivedCache();
+            scheduleUpdateUI(); 
         }
         
         function saveLocalData() {
             bpRecords = bpRecords.map(normalizeRecord).filter(Boolean).sort((a, b) => a.timestamp - b.timestamp);
             localStorage.setItem('bp_tracker_data', JSON.stringify(bpRecords));
-            updateUI();
+            invalidateBpDerivedCache();
+            scheduleUpdateUI();
         }
 
         function loadFeedbackOptions() {
@@ -1824,7 +1843,7 @@
                     updatedAt: bpFeedbackOptionsUpdatedAt
                 }, { merge: true }).catch((err) => console.error('[雲端同步] feedback 選項寫入失敗', err));
             }
-            updateUI();
+            scheduleUpdateUI();
         }
 
         // =========================================
@@ -2294,7 +2313,27 @@
             return { label: map[finalLevel].label, color: map[finalLevel].color, tier: finalLevel };
         }
         
+        function invalidateBpDerivedCache() {
+            bpDataRevision++;
+            repRecordsCache = null;
+            repRecordsCacheRev = -1;
+            bpChartDataSig = '';
+        }
+
+        /** 合併同一事件內多次 saveLocalData / setFeedback 觸發的完整重繪 */
+        function scheduleUpdateUI() {
+            if (uiUpdateScheduled) return;
+            uiUpdateScheduled = true;
+            requestAnimationFrame(() => {
+                uiUpdateScheduled = false;
+                updateUI();
+            });
+        }
+
         function getRepresentativeRecords() {
+            if (repRecordsCache && repRecordsCacheRev === bpDataRevision) {
+                return repRecordsCache;
+            }
             const groups = {};
             bpRecords.forEach(record => {
                 const key = `${record.date}_${record.timeSlot}`;
@@ -2325,7 +2364,7 @@
                 }
             });
 
-            return Object.values(groups).map(g => ({ 
+            const result = Object.values(groups).map(g => ({ 
                 date: g.date, 
                 timeSlot: g.timeSlot, 
                 sys: Math.round(g.sysSum / g.count), 
@@ -2338,6 +2377,16 @@
                 if (a.date === b.date) return a.timeSlot === '早' ? -1 : 1; 
                 return new Date(a.date) - new Date(b.date); 
             });
+            repRecordsCache = result;
+            repRecordsCacheRev = bpDataRevision;
+            return result;
+        }
+
+        /** 依時間序取最後 N 筆代表性紀錄（修正舊版誤用 slice(0,n) 取到最舊資料的問題） */
+        function getRecentRepresentativeRecords(limit) {
+            const reps = getRepresentativeRecords();
+            if (!limit || limit >= reps.length) return reps.slice();
+            return reps.slice(-limit);
         }
         
         function evaluateQuality(sys, dia, hr, timeSlot, medicated) {
@@ -2670,9 +2719,8 @@
                 return;
             }
 
-            // 取最近 5 天的代表性紀錄
-            const reps = getRepresentativeRecords();
-            const recent = reps.slice(0, 6);
+            // 取最近 5～6 天的代表性紀錄（時間序最末）
+            const recent = getRecentRepresentativeRecords(6).slice().reverse();
             if (recent.length < 3) {
                 alertEl.classList.add('hidden');
                 alertEl.classList.remove('active');
@@ -2714,7 +2762,7 @@
             ['trend-card-tint-crisis','trend-card-tint-stage2','trend-card-tint-stage1','trend-card-tint-elevated','trend-card-tint-normal']
                 .forEach(c => card.classList.remove(c));
             if (bpRecords.length === 0) return;
-            const reps = getRepresentativeRecords().slice(0, 7);
+            const reps = getRecentRepresentativeRecords(7);
             if (reps.length === 0) return;
             const avgSys = reps.reduce((s, r) => s + r.sys, 0) / reps.length;
             const avgDia = reps.reduce((s, r) => s + r.dia, 0) / reps.length;
@@ -2931,15 +2979,18 @@
                     ${buildFeedbackSelectorHtml({
                         selectorId,
                         selectedReasons,
-                        required: true
+                        required: false,
+                        helperText: '可選填；不想填請按「略過」。若選「其他：」，一定要輸入理由。'
                     })}
                 `,
+                showCancelButton: true,
+                cancelButtonText: '略過',
                 confirmButtonText: '完成回饋',
                 confirmButtonColor: mode === 'crisis' ? '#dc2626' : '#e11d48',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
+                allowOutsideClick: true,
+                allowEscapeKey: true,
                 didOpen: () => initFeedbackSelector(document.getElementById(selectorId)),
-                preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: true })
+                preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: false })
             });
         }
 
@@ -2959,14 +3010,21 @@
                         <div class="text-2xl font-black text-center mb-2">${record.sys}/${record.dia}${record.hr !== null ? ` <span class="text-sm text-slate-400">♥${record.hr}</span>` : ''}</div>
                         <div class="text-center text-xs mb-2">本筆絕對分級：<strong>${tier.label}</strong></div>
                         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-2.5 text-xs text-slate-600 dark:text-slate-300">${a.slotLabel}的歷史紀錄還只有 ${a.baselineCount} 筆，累積到 3 筆以上，我就能幫你做「${a.slotLabel}對${a.slotLabel}」的個人化比較囉。</div>
-                        ${buildFeedbackSelectorHtml({ selectorId, selectedReasons: record.feedbackReasons, required: true })}
+                        ${buildFeedbackSelectorHtml({
+                            selectorId,
+                            selectedReasons: record.feedbackReasons,
+                            required: false,
+                            helperText: '可選填；不想填請按「略過」。若選「其他：」，一定要輸入理由。'
+                        })}
                     </div>`,
+                    showCancelButton: true,
+                    cancelButtonText: '略過',
                     confirmButtonText: '完成回饋',
                     confirmButtonColor: '#10b981',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
+                    allowOutsideClick: true,
+                    allowEscapeKey: true,
                     didOpen: () => initFeedbackSelector(document.getElementById(selectorId)),
-                    preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: true })
+                    preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: false })
                 });
             }
 
@@ -3033,14 +3091,21 @@
                     <div class="text-center text-[10px] text-slate-400">和你最近 ${a.baselineCount} 筆${a.slotLabel}紀錄相比</div>
                     ${reasonsHtml}
                     <div class="mt-3 text-[10px] text-slate-400 leading-relaxed text-center">單筆會自然波動，看趨勢比看單次更重要；若同時段連續多次偏高，建議回診評估。</div>
-                    ${buildFeedbackSelectorHtml({ selectorId, selectedReasons: record.feedbackReasons, required: true })}
+                    ${buildFeedbackSelectorHtml({
+                        selectorId,
+                        selectedReasons: record.feedbackReasons,
+                        required: false,
+                        helperText: '可選填；不想填請按「略過」。若選「其他：」，一定要輸入理由。'
+                    })}
                 </div>`,
+                showCancelButton: true,
+                cancelButtonText: '略過',
                 confirmButtonText: '完成回饋',
                 confirmButtonColor: s.color,
-                allowOutsideClick: false,
-                allowEscapeKey: false,
+                allowOutsideClick: true,
+                allowEscapeKey: true,
                 didOpen: () => initFeedbackSelector(document.getElementById(selectorId)),
-                preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: true })
+                preConfirm: () => finalizeFeedbackFromSelector(record, selectorId, { required: false })
             });
         }
 
@@ -4982,11 +5047,23 @@
         }
 
         function renderChart(recordsData) { 
-            if (chartInstance) chartInstance.destroy(); 
-            if (!recordsData || recordsData.length === 0) return; 
+            if (!recordsData || recordsData.length === 0) {
+                if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+                bpChartDataSig = '';
+                return;
+            } 
             
             const last14Data = recordsData.slice(-14); 
-            const isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches; 
+            const isDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const dataSig = last14Data.map(v => `${v.date}|${v.timeSlot}|${v.sys}|${v.dia}`).join(';');
+
+            if (chartInstance && bpChartDataSig === dataSig && bpChartThemeDark === isDarkTheme) {
+                return;
+            }
+            bpChartDataSig = dataSig;
+            bpChartThemeDark = isDarkTheme;
+
+            if (chartInstance) chartInstance.destroy(); 
             
             Chart.defaults.font.family = '"Noto Sans TC", sans-serif'; 
             Chart.defaults.color = isDarkTheme ? '#64748b' : '#94a3b8'; 
@@ -5374,12 +5451,21 @@
             textArea.style.left = "-9999px"; 
             document.body.appendChild(textArea); 
             textArea.select(); 
+
+            const showCopied = () => Swal.fire({ ...getSwalConfig(), icon: 'success', title: '已複製！', text: '門診摘要已經複製到剪貼簿。', timer: 1500, showConfirmButton: false });
+            const showFail = () => Swal.fire({ ...getSwalConfig(), icon: 'error', title: '複製失敗', text: '抱歉，你的裝置目前不支援一鍵複製。' });
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                textArea.remove();
+                navigator.clipboard.writeText(textToCopy).then(showCopied).catch(showFail);
+                return;
+            }
             
             try { 
                 document.execCommand('copy'); 
-                Swal.fire({ ...getSwalConfig(), icon: 'success', title: '已複製！', text: '門診摘要已經複製到剪貼簿。', timer: 1500, showConfirmButton: false }); 
+                showCopied();
             } catch (err) { 
-                Swal.fire({ ...getSwalConfig(), icon: 'error', title: '複製失敗', text: '抱歉，你的裝置目前不支援一鍵複製。' }); 
+                showFail();
             } finally {
                 textArea.remove();
             }
