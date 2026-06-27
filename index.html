@@ -25,6 +25,17 @@
                 extend: {
                     fontFamily: { 
                         sans: ['"Noto Sans TC"', 'sans-serif'] 
+                    },
+                    colors: {
+                        mia: {
+                            rose: '#e11d48',
+                            blush: '#fff1f2',
+                            ink: '#0f172a'
+                        }
+                    },
+                    boxShadow: {
+                        'mia-card': '0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -6px rgba(15,23,42,0.08)',
+                        'mia-card-dark': '0 1px 2px rgba(0,0,0,0.35), 0 12px 28px -8px rgba(0,0,0,0.45)'
                     }
                 }
             }
@@ -338,9 +349,184 @@
         #adherenceBar {
             box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
         }
+
+        /* ===== Mia UI 2.0：層次、焦點、一致性 ===== */
+        body.mia-app {
+            background-color: #f4f6fb;
+            background-image:
+                radial-gradient(ellipse 120% 80% at 50% -30%, rgba(244, 63, 94, 0.09), transparent 55%),
+                radial-gradient(ellipse 70% 50% at 100% 10%, rgba(99, 102, 241, 0.06), transparent 50%),
+                radial-gradient(ellipse 50% 40% at 0% 40%, rgba(16, 185, 129, 0.05), transparent 45%);
+        }
+        .dark body.mia-app {
+            background-color: #020617;
+            background-image:
+                radial-gradient(ellipse 100% 60% at 50% -20%, rgba(244, 63, 94, 0.12), transparent 50%),
+                radial-gradient(ellipse 60% 40% at 100% 0%, rgba(99, 102, 241, 0.08), transparent 45%);
+        }
+
+        #viewBP > section.bg-white,
+        #viewBP > section#feedbackStatsCard,
+        #viewBP > section#analysisContainer,
+        #viewBP > section#overviewStatsCard,
+        #viewBP > section#trendCard,
+        #viewBP > section.rounded-2xl.shadow-sm.border {
+            border-radius: 1.25rem;
+        }
+
+        .mia-input-panel {
+            position: relative;
+            border: 1px solid rgba(244, 63, 94, 0.12) !important;
+            background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,241,242,0.35) 100%);
+            box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(244,63,94,0.15);
+        }
+        .dark .mia-input-panel {
+            border-color: rgba(244, 63, 94, 0.2) !important;
+            background: linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(76,5,25,0.15) 100%);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -12px rgba(244,63,94,0.2);
+        }
+        .mia-input-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(244,63,94,0.25), transparent 40%, rgba(99,102,241,0.15));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        #inputData {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.15em;
+            background: rgba(255,255,255,0.9);
+        }
+        .dark #inputData {
+            background: rgba(2, 6, 23, 0.85);
+        }
+
+        .mia-btn-save {
+            background: linear-gradient(145deg, #f43f5e 0%, #e11d48 45%, #be123c 100%) !important;
+            box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .mia-btn-save:hover {
+            filter: brightness(1.05);
+        }
+        .mia-btn-save:active {
+            transform: scale(0.97);
+        }
+
+        .mia-heading {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+        .mia-heading-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+        .mia-heading-icon--rose {
+            background: linear-gradient(145deg, rgba(254,205,211,0.9), rgba(251,113,133,0.35));
+            color: #e11d48;
+        }
+        .dark .mia-heading-icon--rose {
+            background: linear-gradient(145deg, rgba(190,18,60,0.35), rgba(76,5,25,0.5));
+            color: #fb7185;
+        }
+
+        .mia-hint {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: #64748b;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(15, 23, 42, 0.05);
+        }
+        .dark .mia-hint {
+            color: #94a3b8;
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .mia-hint code {
+            font-family: ui-monospace, monospace;
+            font-weight: 800;
+            color: #e11d48;
+            background: rgba(255, 241, 242, 0.8);
+            padding: 0.1rem 0.35rem;
+            border-radius: 0.35rem;
+        }
+        .dark .mia-hint code {
+            background: rgba(76, 5, 25, 0.5);
+            color: #fda4af;
+        }
+
+        .mia-segment {
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+        }
+        .dark .mia-segment {
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+        }
+        .mia-tab-active {
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .dark .mia-tab-active {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+
+        .mia-chart-surface {
+            background: linear-gradient(180deg, rgba(248,250,252,0.8), transparent);
+            border-radius: 1rem;
+            padding: 0.5rem;
+        }
+        .dark .mia-chart-surface {
+            background: linear-gradient(180deg, rgba(15,23,42,0.5), transparent);
+        }
+
+        #overviewStatsCard .grid > div,
+        #analysisContainer .grid > div.bg-slate-50,
+        #analysisContainer .grid > div[class*="bg-slate"] {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #overviewStatsCard .grid > div:hover,
+        #analysisContainer .grid > div.bg-slate-50:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        }
+
+        header.sticky {
+            padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+        }
+        body.mia-app {
+            padding-bottom: max(6rem, calc(env(safe-area-inset-bottom, 0px) + 4rem));
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            html { scroll-behavior: auto; }
+        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
+<body class="mia-app bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
 
     <!-- 頂部導航列 -->
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-100/50 dark:border-slate-800/50 shadow-sm">
@@ -377,19 +563,19 @@
         </div>
         <!-- 模組分頁切換（血壓 | 瘦身），醫生模式隱藏 -->
         <div class="max-w-2xl mx-auto px-4 pb-2 hide-in-doctor-mode">
-            <div class="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                <button id="tabBp" onclick="window.switchModule('bp')" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 text-rose-500 shadow-sm">
+            <div class="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mia-segment">
+                <button id="tabBp" onclick="window.switchModule('bp')" class="mia-tab-active flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 text-rose-500">
                     <i class="ph-fill ph-heartbeat"></i> 血壓
                 </button>
-                <button id="tabWeight" onclick="window.switchModule('weight')" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-500 dark:text-slate-400">
+                <button id="tabWeight" onclick="window.switchModule('weight')" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                     <i class="ph-fill ph-scales"></i> 瘦身
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-2xl mx-auto p-3 mt-1">
-      <div id="viewBP" class="space-y-4">
+    <main class="max-w-2xl mx-auto px-3.5 py-2 mt-0.5">
+      <div id="viewBP" class="space-y-5">
 
         <!-- ========================================== -->
         <!-- 醫生模式專屬：門診摘要卡 -->
@@ -514,11 +700,11 @@
         <!-- ========================================== -->
         <!-- 輸入區塊 -->
         <!-- ========================================== -->
-        <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
+        <section class="mia-input-panel bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
             <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-1.5">
-                    <i class="ph-fill ph-pencil-simple text-rose-500 text-lg"></i>
-                    <h2 class="text-base font-bold">輸入數值</h2>
+                <div class="mia-heading">
+                    <span class="mia-heading-icon mia-heading-icon--rose" aria-hidden="true"><i class="ph-fill ph-pencil-simple"></i></span>
+                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">輸入數值</h2>
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="medicated-toggle cursor-pointer relative flex items-center">
@@ -532,14 +718,16 @@
                     </button>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" class="flex-1 w-full h-12 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 focus:outline-none transition-all placeholder:text-transparent" placeholder="">
-                <button onclick="window.processInput()" class="flex-shrink-0 w-12 h-12 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold rounded-xl shadow-md transition-transform active:scale-[0.98] flex justify-center items-center">
+            <div class="flex items-center gap-2.5">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" class="flex-1 w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="12080" aria-label="血壓數值盲打輸入">
+                <button type="button" onclick="window.processInput()" class="mia-btn-save flex-shrink-0 w-[3.25rem] h-[3.25rem] text-white font-bold rounded-2xl transition-transform flex justify-center items-center" aria-label="儲存紀錄">
                     <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
                 </button>
             </div>
-            <p class="text-center text-[10px] text-slate-400 mt-2 tracking-wider">盲打輸入：收縮壓 / 舒張壓 / 心率</p>
-            <p class="text-center text-[10px] text-slate-400 mt-1 tracking-wide">💊「今日已服藥」=量測當下今天的藥已吃了；早上服藥前量測請勿勾選</p>
+            <div class="flex flex-col items-center gap-1.5 mt-3">
+                <span class="mia-hint">盲打：<strong>收縮</strong> / <strong>舒張</strong> / <strong>心率</strong>，例 <code>1208072</code></span>
+                <span class="mia-hint"><i class="ph-fill ph-pill text-rose-400"></i> 服藥前量測請勿勾「今日已服藥」</span>
+            </div>
         </section>
 
         <!-- ========================================== -->
@@ -724,7 +912,7 @@
                     <span>看進階報表</span>
                 </button>
             </div>
-            <div class="relative h-48 w-full">
+            <div class="relative h-48 w-full mia-chart-surface">
                 <canvas id="bpChart"></canvas>
             </div>
         </section>
@@ -1140,8 +1328,9 @@
             document.getElementById('viewWeight').classList.toggle('hidden', mod !== 'weight');
             const tabBp = document.getElementById('tabBp');
             const tabW = document.getElementById('tabWeight');
-            const active = 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 shadow-sm';
-            const idle = 'flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm font-bold transition-all text-slate-500 dark:text-slate-400';
+            const base = 'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all';
+            const active = base + ' mia-tab-active bg-white dark:bg-slate-700';
+            const idle = base + ' text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300';
             tabBp.className = (mod === 'bp' ? active + ' text-rose-500' : idle);
             tabW.className = (mod === 'weight' ? active + ' text-teal-500' : idle);
             window.scrollTo(0, 0);
