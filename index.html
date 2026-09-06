@@ -524,6 +524,110 @@
             }
             html { scroll-behavior: auto; }
         }
+
+        /* ===== Mia 護心任務：把「量這一筆」變成今天唯一要做的事 ===== */
+        #miaQuestCard {
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,241,242,0.7));
+            border: 1px solid rgba(244, 63, 94, 0.14);
+            box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -12px rgba(244,63,94,0.18);
+        }
+        .dark #miaQuestCard {
+            background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(76,5,25,0.22));
+            border-color: rgba(244, 63, 94, 0.22);
+        }
+        #miaQuestCard.mia-quest-done {
+            background: linear-gradient(180deg, rgba(236,253,245,0.95), rgba(255,255,255,0.9));
+            border-color: rgba(16, 185, 129, 0.22);
+            box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 28px -12px rgba(16,185,129,0.18);
+        }
+        .dark #miaQuestCard.mia-quest-done {
+            background: linear-gradient(180deg, rgba(6,78,59,0.28), rgba(15,23,42,0.95));
+            border-color: rgba(16, 185, 129, 0.28);
+        }
+        #miaQuestCard.mia-quest-protect {
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+        #miaQuestCard.mia-quest-comeback {
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+        .mia-slot-chip {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            height: 2.25rem;
+            border-radius: 0.75rem;
+            font-size: 12px;
+            font-weight: 800;
+            border: 1px dashed rgba(15,23,42,0.12);
+            background: rgba(248,250,252,0.8);
+            color: #94a3b8;
+        }
+        .dark .mia-slot-chip {
+            border-color: rgba(255,255,255,0.1);
+            background: rgba(2,6,23,0.45);
+            color: #64748b;
+        }
+        .mia-slot-chip.is-done {
+            border-style: solid;
+            border-color: rgba(16,185,129,0.35);
+            background: rgba(16,185,129,0.12);
+            color: #059669;
+        }
+        .dark .mia-slot-chip.is-done {
+            color: #34d399;
+            background: rgba(16,185,129,0.18);
+        }
+        .mia-slot-chip.is-now {
+            border-style: solid;
+            border-color: rgba(244,63,94,0.45);
+            background: rgba(244,63,94,0.1);
+            color: #e11d48;
+            box-shadow: 0 0 0 3px rgba(244,63,94,0.08);
+        }
+        .dark .mia-slot-chip.is-now { color: #fb7185; }
+
+        @keyframes mia-input-nudge {
+            0%, 100% { box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(244,63,94,0.15); }
+            50% { box-shadow: 0 0 0 4px rgba(244,63,94,0.22), 0 12px 32px -12px rgba(244,63,94,0.35); }
+        }
+        .mia-input-panel.mia-input-nudge {
+            animation: mia-input-nudge 0.7s ease-in-out 3;
+        }
+
+        #saveCheckOverlay {
+            flex-direction: column;
+            gap: 0.15rem;
+            width: auto;
+            min-width: 96px;
+            height: auto;
+            min-height: 96px;
+            padding: 1.1rem 1.25rem 0.9rem;
+            border-radius: 1.5rem;
+        }
+        #saveCheckCaption {
+            display: none;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            max-width: 9.5rem;
+            text-align: center;
+        }
+        #saveCheckOverlay.show #saveCheckCaption.has-text { display: block; }
+
+        #miaStickyCta {
+            display: none;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        #miaStickyCta.is-visible {
+            display: flex;
+        }
+        body.mia-app.has-sticky-cta {
+            padding-bottom: max(7.5rem, calc(env(safe-area-inset-bottom, 0px) + 5.5rem));
+        }
+        body.doctor-mode #miaStickyCta { display: none !important; }
     </style>
 </head>
 <body class="mia-app bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
@@ -538,6 +642,9 @@
                     <i class="ph-fill ph-sparkle text-lg"></i>
                 </div>
                 <h1 class="text-lg font-bold tracking-wide">護心行動 <span class="text-xs text-rose-500 bg-rose-100 dark:bg-rose-900/30 px-1.5 py-0.5 rounded ml-1">Mia</span></h1>
+                <span id="headerStreakChip" class="hidden ml-0.5 inline-flex items-center gap-0.5 text-[11px] font-black text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">
+                    <i class="ph-fill ph-flame"></i><span id="headerStreakNum">0</span>
+                </span>
             </div>
             
             <!-- 醫生模式標題 -->
@@ -592,6 +699,31 @@
             </div>
             <div id="doctorSummaryContent" class="grid grid-cols-2 gap-3">
                 <!-- 動態注入門診數據 -->
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- Mia 今日護心任務（激勵、歡迎回來、保住連續） -->
+        <!-- ========================================== -->
+        <section id="miaQuestCard" class="hide-in-doctor-mode relative overflow-hidden rounded-2xl p-4 transition-all duration-300">
+            <div class="relative z-10">
+                <div class="flex items-start gap-3">
+                    <div id="miaQuestAvatar" class="flex-shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-white flex items-center justify-center shadow-md">
+                        <i class="ph-fill ph-heart text-xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                            <h2 id="miaQuestTitle" class="text-base font-black text-slate-800 dark:text-slate-100">今日護心任務</h2>
+                            <span id="miaQuestStreak" class="hidden text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"></span>
+                        </div>
+                        <p id="miaQuestBody" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">量一次就好。我在這裡等你。</p>
+                    </div>
+                </div>
+                <div id="miaQuestSlots" class="mt-3 flex items-center gap-2"></div>
+                <button type="button" id="miaQuestCta" onclick="window.focusBpInput()" class="hidden mt-3 w-full h-11 rounded-xl text-sm font-black text-white mia-btn-save items-center justify-center gap-1.5">
+                    現在就量
+                </button>
+                <div id="miaQuestMeta" class="mt-2.5 flex items-center justify-between gap-2 text-[10px] font-bold text-slate-400"></div>
             </div>
         </section>
 
@@ -700,7 +832,7 @@
         <!-- ========================================== -->
         <!-- 輸入區塊 -->
         <!-- ========================================== -->
-        <section class="mia-input-panel bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
+        <section id="bpInputPanel" class="mia-input-panel bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
             <div class="flex items-center justify-between mb-3">
                 <div class="mia-heading">
                     <span class="mia-heading-icon mia-heading-icon--rose" aria-hidden="true"><i class="ph-fill ph-pencil-simple"></i></span>
@@ -1087,7 +1219,16 @@
     </main>
 
     <!-- 存檔成功動畫 overlay -->
-    <div id="saveCheckOverlay" class="hidden"><i class="ph-bold ph-check"></i></div>
+    <div id="saveCheckOverlay" class="hidden">
+        <i class="ph-bold ph-check"></i>
+        <span id="saveCheckCaption"></span>
+    </div>
+
+    <!-- 今日還沒量：固定在底部的行動列 -->
+    <button type="button" id="miaStickyCta" onclick="window.focusBpInput()" class="hide-in-doctor-mode fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[min(92vw,32rem)] w-[calc(100%-2rem)] h-12 rounded-2xl text-sm font-black text-white mia-btn-save shadow-lg items-center justify-center gap-2">
+        <i class="ph-fill ph-heartbeat"></i>
+        <span id="miaStickyCtaText">Mia 等你量血壓 · 點我記錄</span>
+    </button>
 
     <!-- ========================================== -->
     <!-- 進階儀表板 Modal -->
@@ -1335,6 +1476,7 @@
             tabW.className = (mod === 'weight' ? active + ' text-teal-500' : idle);
             window.scrollTo(0, 0);
             if (mod === 'weight') updateWeightUI();
+            updateMiaQuest();
         };
 
         window.processWeightInput = function() {
@@ -1783,6 +1925,7 @@
                 if (document.visibilityState === 'visible') {
                     resetMedicatedToggle();
                     applyTheme();
+                    updateMiaQuest();
                 }
             });
 
@@ -1816,7 +1959,12 @@
             }
 
             scheduleNextNotification();
-            setTimeout(() => showOnboarding(), 400);
+            placeMiaQuestAtTop();
+            updateMiaQuest();
+            setTimeout(async () => {
+                await showOnboarding();
+                await maybeShowComeback();
+            }, 400);
         };
 
         function getSwalConfig() { 
@@ -2958,9 +3106,14 @@
             card.classList.add(TIER_META[getBpTierKey(avgSys, avgDia)].tintClass);
         }
 
-        function showSaveSuccessAnim() {
+        function showSaveSuccessAnim(caption) {
             const overlay = document.getElementById('saveCheckOverlay');
             if (!overlay) return;
+            const cap = document.getElementById('saveCheckCaption');
+            if (cap) {
+                cap.textContent = caption || '';
+                cap.classList.toggle('has-text', !!caption);
+            }
             overlay.classList.remove('hidden', 'show');
             void overlay.offsetWidth; // force reflow
             overlay.classList.add('show');
@@ -3306,9 +3459,11 @@
             if (localStorage.getItem('notifEnabled') !== '1') return;
 
             const now = new Date();
+            const morning = getReminderCopy(7);
+            const evening = getReminderCopy(21);
             const targets = [
-                { hour: 7, min: 0, title: '☀️ Mia 提醒', body: '早晨血壓量測時間到了' },
-                { hour: 21, min: 0, title: '🌙 Mia 提醒', body: '睡前血壓量測時間到了' }
+                { hour: 7, min: 0, title: morning.title, body: morning.body },
+                { hour: 21, min: 0, title: evening.title, body: evening.body }
             ];
             let nextDelay = Infinity;
             let nextTarget = null;
@@ -3453,6 +3608,356 @@
                 else break;
             }
             return streak;
+        }
+
+        function calculateBestStreak() {
+            const dates = [...new Set(bpRecords.map(r => r.date))].sort();
+            let best = 0, cur = 0, prev = null;
+            for (const ds of dates) {
+                if (prev) {
+                    const prevDate = new Date(prev + 'T12:00:00');
+                    const thisDate = new Date(ds + 'T12:00:00');
+                    const diff = Math.round((thisDate - prevDate) / 86400000);
+                    cur = diff === 1 ? cur + 1 : 1;
+                } else {
+                    cur = 1;
+                }
+                if (cur > best) best = cur;
+                prev = ds;
+            }
+            return best;
+        }
+
+        function getTodayQuest() {
+            const todayKey = getLogicalDateString(Date.now());
+            const recs = bpRecords.filter(r => r.date === todayKey);
+            const hour = new Date().getHours();
+            return {
+                date: todayKey,
+                hasMorning: recs.some(r => r.timeSlot === '早'),
+                hasEvening: recs.some(r => r.timeSlot === '晚'),
+                currentSlot: (hour >= 4 && hour < 15) ? '早' : '晚',
+                count: recs.length
+            };
+        }
+
+        function getDaysSinceLastMeasurement() {
+            if (!bpRecords.length) return null;
+            const latestTs = Math.max(...bpRecords.map(r => r.timestamp || 0));
+            const last = getLogicalDateString(latestTs);
+            const today = getLogicalDateString(Date.now());
+            const a = new Date(last + 'T12:00:00');
+            const b = new Date(today + 'T12:00:00');
+            return Math.max(0, Math.round((b - a) / 86400000));
+        }
+
+        function getHabitRank(count) {
+            if (count >= 365) return { name: '護心長老', icon: 'ph-crown' };
+            if (count >= 100) return { name: '控壓達人', icon: 'ph-medal' };
+            if (count >= 30) return { name: '護心學員', icon: 'ph-star' };
+            if (count >= 10) return { name: '開始有在量', icon: 'ph-sparkle' };
+            return { name: '剛起步', icon: 'ph-heart' };
+        }
+
+        function nextStreakMilestone(streak) {
+            return [7, 14, 30, 60, 100].find(n => n > streak) || null;
+        }
+
+        function getMiaQuestCopy(quest, streak, daysSince) {
+            const hour = new Date().getHours();
+            const done = quest.hasMorning && quest.hasEvening;
+
+            if (done) {
+                return {
+                    tone: 'done',
+                    title: '今日任務完成',
+                    body: streak >= 2
+                        ? `Josh弟弟超棒，連續 ${streak} 天都有量。去休息，這兩筆我幫你看著。`
+                        : '早、晚兩筆都到了。量本身就是在護心，數字待會再看。',
+                    cta: null,
+                    sticky: null
+                };
+            }
+
+            if (daysSince === null) {
+                return {
+                    tone: 'fresh',
+                    title: '第一筆，我等很久了',
+                    body: '不用一次做完美。坐下、休息 5 分鐘，盲打數字就好。',
+                    cta: '記錄第一筆血壓',
+                    sticky: '第一筆只要 30 秒 · 點我記錄'
+                };
+            }
+
+            if (daysSince >= 7 && !quest.hasMorning && !quest.hasEvening) {
+                return {
+                    tone: 'comeback',
+                    title: '我還在，沒有要算舊帳',
+                    body: `已經 ${daysSince} 天沒量了。以前的空白不用補，這一筆就算重新開始。`,
+                    cta: '從這一筆重新開始',
+                    sticky: '中斷沒關係 · 量一次就接得上'
+                };
+            }
+
+            if (daysSince >= 3 && !quest.hasMorning && !quest.hasEvening) {
+                return {
+                    tone: 'comeback',
+                    title: '歡迎回來',
+                    body: '這幾天沒量，我知道有時候真的不想面對機器。量一次就好，我不會唸你。',
+                    cta: '量這一筆就好',
+                    sticky: '歡迎回來 · 點我記一筆'
+                };
+            }
+
+            if (streak >= 3 && !quest.hasMorning && !quest.hasEvening) {
+                return {
+                    tone: 'protect',
+                    title: `連續 ${streak} 天，差這一筆`,
+                    body: '不用想血壓高不高。先量，才能保住這條連續紀錄。',
+                    cta: '保住連續紀錄',
+                    sticky: `連續 ${streak} 天快斷了 · 點我保住`
+                };
+            }
+
+            if (!quest.hasMorning && hour >= 4 && hour < 15) {
+                return {
+                    tone: 'morning',
+                    title: '早安，先量再出門',
+                    body: '起床後坐著休息 5 分鐘，量完再喝咖啡。我只要這一筆。',
+                    cta: '記錄早晨血壓',
+                    sticky: '早晨還沒量 · 點我記錄'
+                };
+            }
+
+            if (quest.hasMorning && !quest.hasEvening && (hour >= 15 || hour < 4)) {
+                return {
+                    tone: 'evening',
+                    title: '晚上這筆，今天就過關',
+                    body: '早上已經量了。睡前再一筆，今天的 722 就達標。',
+                    cta: '記錄睡前血壓',
+                    sticky: '再一筆就過關 · 點我記錄'
+                };
+            }
+
+            if (!quest.hasEvening && (hour >= 15 || hour < 4)) {
+                return {
+                    tone: 'evening',
+                    title: '睡前量一次就好',
+                    body: '今天還沒有紀錄。坐下、放鬆、打完數字就可以休息。',
+                    cta: '記錄睡前血壓',
+                    sticky: '睡前量一次 · 點我記錄'
+                };
+            }
+
+            if (!quest.hasMorning && hour >= 15) {
+                return {
+                    tone: 'missed',
+                    title: '早上漏了也沒關係',
+                    body: '晚上再量一次，今天就不算空白。有量就贏過沒量。',
+                    cta: '現在補一筆',
+                    sticky: '今天還是空白 · 點我補一筆'
+                };
+            }
+
+            return {
+                tone: 'nudge',
+                title: quest.currentSlot === '早' ? '早晨這一筆還空著' : '晚上這一筆還空著',
+                body: '不用一次做滿。現在量的這一段，才是最重要的。',
+                cta: '現在就量',
+                sticky: '還差一筆 · 點我記錄'
+            };
+        }
+
+        function placeMiaQuestAtTop() {
+            const view = document.getElementById('viewBP');
+            const quest = document.getElementById('miaQuestCard');
+            const input = document.getElementById('bpInputPanel');
+            const hero = document.getElementById('latestReadingHero');
+            if (!view || !quest || !input || !hero) return;
+            view.insertBefore(quest, hero);
+            view.insertBefore(input, hero);
+        }
+
+        window.focusBpInput = function() {
+            if (currentModule !== 'bp') window.switchModule('bp');
+            const input = document.getElementById('inputData');
+            const panel = document.getElementById('bpInputPanel');
+            if (!input || !panel) return;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            panel.classList.remove('mia-input-nudge');
+            void panel.offsetWidth;
+            panel.classList.add('mia-input-nudge');
+            setTimeout(() => panel.classList.remove('mia-input-nudge'), 2200);
+            setTimeout(() => {
+                input.focus();
+                try { input.click(); } catch (e) {}
+            }, 280);
+        };
+
+        function updateMiaQuest() {
+            placeMiaQuestAtTop();
+            const card = document.getElementById('miaQuestCard');
+            if (!card) return;
+
+            const quest = getTodayQuest();
+            const streak = calculateCurrentStreak();
+            const best = calculateBestStreak();
+            const daysSince = getDaysSinceLastMeasurement();
+            const copy = getMiaQuestCopy(quest, streak, daysSince);
+            const rank = getHabitRank(bpRecords.length);
+            const next = nextStreakMilestone(streak);
+
+            card.classList.remove('mia-quest-done', 'mia-quest-protect', 'mia-quest-comeback');
+            if (copy.tone === 'done') card.classList.add('mia-quest-done');
+            else if (copy.tone === 'protect') card.classList.add('mia-quest-protect');
+            else if (copy.tone === 'comeback' || copy.tone === 'fresh') card.classList.add('mia-quest-comeback');
+
+            const avatar = document.getElementById('miaQuestAvatar');
+            if (avatar) {
+                avatar.innerHTML = copy.tone === 'done'
+                    ? '<i class="ph-fill ph-check-circle text-xl"></i>'
+                    : copy.tone === 'protect'
+                        ? '<i class="ph-fill ph-flame text-xl"></i>'
+                        : '<i class="ph-fill ph-heart text-xl"></i>';
+                avatar.className = 'flex-shrink-0 w-11 h-11 rounded-2xl text-white flex items-center justify-center shadow-md ' + (
+                    copy.tone === 'done'
+                        ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
+                        : copy.tone === 'protect'
+                            ? 'bg-gradient-to-br from-amber-400 to-orange-500'
+                            : 'bg-gradient-to-br from-rose-400 to-pink-500'
+                );
+            }
+
+            const titleEl = document.getElementById('miaQuestTitle');
+            const bodyEl = document.getElementById('miaQuestBody');
+            const streakEl = document.getElementById('miaQuestStreak');
+            const slotsEl = document.getElementById('miaQuestSlots');
+            const ctaEl = document.getElementById('miaQuestCta');
+            const metaEl = document.getElementById('miaQuestMeta');
+
+            if (titleEl) titleEl.textContent = copy.title;
+            if (bodyEl) bodyEl.textContent = copy.body;
+
+            if (streakEl) {
+                if (streak > 0) {
+                    streakEl.classList.remove('hidden');
+                    streakEl.textContent = `🔥 ${streak} 天`;
+                } else if (best > 0) {
+                    streakEl.classList.remove('hidden');
+                    streakEl.textContent = `最佳 ${best} 天還在`;
+                } else {
+                    streakEl.classList.add('hidden');
+                }
+            }
+
+            if (slotsEl) {
+                const mark = (done, label, isNow) => {
+                    const cls = done ? 'is-done' : (isNow ? 'is-now' : '');
+                    const icon = done ? 'ph-check-circle' : (isNow ? 'ph-circle-dashed' : 'ph-circle');
+                    return `<div class="mia-slot-chip ${cls}"><i class="ph-fill ${icon}"></i>${label}${done ? ' 完成' : (isNow ? ' 現在' : '')}</div>`;
+                };
+                slotsEl.innerHTML =
+                    mark(quest.hasMorning, '早晨', !quest.hasMorning && quest.currentSlot === '早') +
+                    mark(quest.hasEvening, '睡前', !quest.hasEvening && quest.currentSlot === '晚');
+            }
+
+            if (ctaEl) {
+                if (copy.cta) {
+                    ctaEl.classList.remove('hidden');
+                    ctaEl.classList.add('flex');
+                    ctaEl.innerHTML = `<i class="ph-fill ph-heartbeat"></i>${copy.cta}`;
+                } else {
+                    ctaEl.classList.add('hidden');
+                    ctaEl.classList.remove('flex');
+                }
+            }
+
+            if (metaEl) {
+                const bits = [`${rank.name} · ${bpRecords.length} 筆`];
+                if (best > 0) bits.push(`最高連續 ${best} 天`);
+                if (next && streak > 0) bits.push(`再 ${next - streak} 天到 ${next} 天`);
+                metaEl.innerHTML = `<span>${bits[0]}</span><span>${bits.slice(1).join(' · ')}</span>`;
+            }
+
+            const headerChip = document.getElementById('headerStreakChip');
+            const headerNum = document.getElementById('headerStreakNum');
+            if (headerChip && headerNum) {
+                if (streak > 0 && currentModule === 'bp') {
+                    headerChip.classList.remove('hidden');
+                    headerNum.textContent = String(streak);
+                } else {
+                    headerChip.classList.add('hidden');
+                }
+            }
+
+            const sticky = document.getElementById('miaStickyCta');
+            const stickyText = document.getElementById('miaStickyCtaText');
+            const showSticky = !!(copy.sticky && currentModule === 'bp' && !isDoctorMode);
+            if (sticky) {
+                sticky.classList.toggle('is-visible', showSticky);
+                if (stickyText && copy.sticky) stickyText.textContent = copy.sticky;
+            }
+            document.body.classList.toggle('has-sticky-cta', showSticky);
+        }
+
+        function getSaveCaption(daysBefore, questBefore, questAfter, streakAfter) {
+            if (questAfter.hasMorning && questAfter.hasEvening && !(questBefore.hasMorning && questBefore.hasEvening)) {
+                return '今日任務完成';
+            }
+            if (daysBefore !== null && daysBefore >= 3 && !questBefore.hasMorning && !questBefore.hasEvening) {
+                return '歡迎回來';
+            }
+            if (streakAfter >= 2) return `連續 ${streakAfter} 天`;
+            if (!questBefore.hasMorning && !questBefore.hasEvening) return '今天第一筆';
+            return '已記錄';
+        }
+
+        async function maybeShowComeback() {
+            if (localStorage.getItem('onboarded') !== '1') return;
+            if (isDoctorMode || currentModule !== 'bp') return;
+            const days = getDaysSinceLastMeasurement();
+            if (days === null || days < 3) return;
+            const quest = getTodayQuest();
+            if (quest.hasMorning || quest.hasEvening) return;
+            const today = getLogicalDateString(Date.now());
+            if (localStorage.getItem('miaComebackDate') === today) return;
+            localStorage.setItem('miaComebackDate', today);
+            const best = calculateBestStreak();
+            const result = await Swal.fire({
+                ...getSwalConfig(),
+                html: `
+                    <div class="flex flex-col items-center py-1">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center mb-3 shadow-md">
+                            <i class="ph-fill ph-heart text-3xl text-white"></i>
+                        </div>
+                        <div class="text-lg font-black mb-2">Josh弟弟，我還在</div>
+                        <div class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed text-center px-2">
+                            已經 <strong class="text-rose-500">${days}</strong> 天沒量了。不想量很正常，機器有時候真的很煩。<br/><br/>
+                            不用補以前的空白。${best > 0 ? `你曾經連續量過 <strong>${best}</strong> 天，那份紀錄還在。<br/><br/>` : ''}
+                            現在這一筆，就算重新開始。
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: '好，現在量',
+                confirmButtonColor: '#e11d48',
+                showCancelButton: true,
+                cancelButtonText: '先看看'
+            });
+            if (result.isConfirmed) window.focusBpInput();
+        }
+
+        function getReminderCopy(hour) {
+            const streak = calculateCurrentStreak();
+            const quest = getTodayQuest();
+            if (hour < 12) {
+                if (quest.hasMorning) return { title: '☀️ Mia', body: '早晨已經量了，讚。晚上見。' };
+                if (streak >= 3) return { title: '☀️ Mia', body: `連續 ${streak} 天了，早晨量一次就能保住。` };
+                return { title: '☀️ Mia', body: 'Josh弟弟，起床後坐 5 分鐘，量完再喝咖啡。' };
+            }
+            if (quest.hasEvening && quest.hasMorning) return { title: '🌙 Mia', body: '今天早、晚都量了。好好休息。' };
+            if (quest.hasMorning) return { title: '🌙 Mia', body: '早上已經量了，睡前再一筆今天就過關。' };
+            if (streak >= 3) return { title: '🌙 Mia', body: `連續 ${streak} 天快斷了，現在量一次就能保住。` };
+            return { title: '🌙 Mia', body: '睡前量一次就好，30 秒。我等你。' };
         }
 
         // 里程碑慶祝
@@ -3787,6 +4292,7 @@
             renderFeedbackStats();
             populateMonthFilter();
             updateComplianceStatus();
+            updateMiaQuest();
             updateTrendAnalysis(representativeRecords);
             updateDoctorSummary(representativeRecords);
             renderChart(representativeRecords);
@@ -3826,6 +4332,9 @@
             }
             
             const quality = evaluateQuality(validRecord.sys, validRecord.dia, validRecord.hr, validRecord.timeSlot, validRecord.medicated);
+            const daysBefore = getDaysSinceLastMeasurement();
+            const questBefore = getTodayQuest();
+            const streakBefore = calculateCurrentStreak();
             
             bpRecords.push(validRecord);
             saveLocalData();
@@ -3835,6 +4344,9 @@
             resetMedicatedToggle();
 
             const isCrisis = validRecord.sys >= 160 || validRecord.dia >= 100;
+            const questAfter = getTodayQuest();
+            const streakAfter = calculateCurrentStreak();
+            const saveCaption = getSaveCaption(daysBefore, questBefore, questAfter, streakAfter);
 
             if (isCrisis) {
                 hapticFeedback([60, 80, 60, 80, 60]);
@@ -3842,8 +4354,8 @@
                     .then(() => openMeasurementFeedback(validRecord, { mode: 'crisis' }))
                     .then(() => checkMilestones());
             } else {
-                hapticFeedback(30);
-                showSaveSuccessAnim();
+                hapticFeedback(streakAfter > streakBefore || (questAfter.hasMorning && questAfter.hasEvening) ? [40, 40, 80] : 30);
+                showSaveSuccessAnim(saveCaption);
                 // 當次即時比較：與同時段歷史基準對照（早對早、晚對晚）
                 setTimeout(() => {
                     showInstantComparison(validRecord).then(() => checkMilestones());
@@ -4002,42 +4514,60 @@
         }
 
         window.showStreakModal = function() { 
-            let streak = 0; 
+            const streak = calculateCurrentStreak();
+            const best = calculateBestStreak();
             const datesSet = new Set(bpRecords.map(r => r.date)); 
             const today = new Date(); 
-            for (let i = 0; i < 365; i++) { 
-                const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i); 
-                const targetStr = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; 
-                if (datesSet.has(targetStr)) { streak++; } else if (i === 0) { continue; } else { break; } 
-            } 
-            
             let activeDays = 0; 
             for (let i = 0; i < 7; i++) { 
                 const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i); 
                 const targetStr = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; 
                 if (datesSet.has(targetStr)) activeDays++; 
             } 
-            
-            const isAchieved = activeDays >= 5; 
+            const isAchieved = activeDays >= 5;
+            const next = nextStreakMilestone(streak);
+            const daysSince = getDaysSinceLastMeasurement();
+            const title = isAchieved
+                ? 'Josh弟弟，這週有在護心'
+                : (streak > 0
+                    ? `連續 ${streak} 天，差這一筆`
+                    : (best > 0 ? '中斷沒關係，紀錄還在' : '從今天這一筆開始'));
+            const note = daysSince !== null && daysSince >= 3 && streak === 0
+                ? `空白不用補。你最高連續過 ${best} 天，量一次就重新累積。`
+                : (next && streak > 0
+                    ? `再 ${next - streak} 天就能解鎖「連續 ${next} 天」。`
+                    : '有量就贏過沒量。數字高低明天再看。');
             
             Swal.fire({ 
                 ...getSwalConfig(), 
-                title: isAchieved ? 'Josh弟弟，很棒喔！' : '這幾天有點小偷懶喔', 
+                title, 
                 html: `
-                    <div class="text-left space-y-4 mt-4">
+                    <div class="text-left space-y-3 mt-3">
                         <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                            <div class="text-xs text-slate-500 font-bold mb-1 uppercase">本週 722 達標率</div>
+                            <div class="text-xs text-slate-500 font-bold mb-1 uppercase">本週有量的天數</div>
                             <div class="text-3xl font-black ${isAchieved ? 'text-emerald-500' : 'text-amber-500'}">${activeDays} <span class="text-base font-bold text-slate-400">/ 7 天</span></div>
                         </div>
-                        <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                            <div class="text-xs text-slate-500 font-bold mb-1 uppercase">連續不中斷紀錄</div>
-                            <div class="text-3xl font-black text-rose-500">${streak} <span class="text-base font-bold text-slate-400">天</span></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                <div class="text-xs text-slate-500 font-bold mb-1 uppercase">目前連續</div>
+                                <div class="text-3xl font-black text-rose-500">${streak} <span class="text-base font-bold text-slate-400">天</span></div>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                <div class="text-xs text-slate-500 font-bold mb-1 uppercase">最高連續</div>
+                                <div class="text-3xl font-black text-indigo-500">${best} <span class="text-base font-bold text-slate-400">天</span></div>
+                            </div>
                         </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed text-center px-1">${note}</p>
                     </div>
                 `, 
-                confirmButtonColor: '#3b82f6', 
-                confirmButtonText: '我知道了' 
-            }); 
+                confirmButtonColor: '#e11d48', 
+                confirmButtonText: streak === 0 || !getTodayQuest().hasMorning || !getTodayQuest().hasEvening ? '去量一筆' : '我知道了' 
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    const q = getTodayQuest();
+                    if (!(q.hasMorning && q.hasEvening)) window.focusBpInput();
+                }
+            });
         };
 
         function closeAdvancedDashboard() {
@@ -4968,6 +5498,17 @@
                     <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hasEvening ? 'bg-white/25 text-white' : 'bg-white/10 text-white/40'}">
                         <i class="ph-fill ${hasEvening ? 'ph-check-circle' : 'ph-circle'} text-xs"></i>晚
                     </span>
+                `;
+            }
+
+            const legend = document.getElementById('sevenDaysLegend');
+            if (legend) {
+                const streakNow = calculateCurrentStreak();
+                const bestNow = calculateBestStreak();
+                legend.innerHTML = `
+                    <span class="text-[10px] font-bold text-white/80 flex items-center gap-1"><i class="ph-fill ph-flame text-amber-200"></i>連續 ${streakNow} 天</span>
+                    <span class="text-[10px] font-bold text-white/60">最佳 ${bestNow} 天</span>
+                    <span class="ml-auto text-[10px] font-bold text-white/50">${activeDays}/7 日有量</span>
                 `;
             }
         }
