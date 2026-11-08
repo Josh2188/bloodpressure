@@ -49,7 +49,26 @@
         /* 醫生模式切換邏輯 */
         body.doctor-mode .hide-in-doctor-mode { display: none !important; }
         body.doctor-mode .doctor-mode-header { display: flex !important; }
-        body.doctor-mode .doctor-mode-show { display: block !important; }
+        body.doctor-mode .doctor-mode-show { display: none !important; }
+        body.doctor-mode #historyTableWrap { overflow-x: auto; }
+        body.doctor-mode #doctorSheet { width: 100%; border-collapse: collapse; font-size: 14px; }
+        body.doctor-mode #doctorSheet th,
+        body.doctor-mode #doctorSheet td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #e7e5e4;
+            text-align: left;
+            font-weight: 500;
+            color: #44403c;
+            white-space: nowrap;
+        }
+        body.doctor-mode #doctorSheet th {
+            font-size: 12px;
+            color: #78716c;
+            font-weight: 600;
+            background: #fafaf9;
+        }
+        body.doctor-mode #doctorSheet td.num,
+        body.doctor-mode #doctorSheet th.num { text-align: right; font-variant-numeric: tabular-nums; }
         .doctor-mode-header { display: none !important; }
         .doctor-mode-show { display: none !important; }
         
@@ -782,10 +801,7 @@
             
             <!-- 醫生模式標題 -->
             <div class="items-center gap-2 doctor-mode-header">
-                <div class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 p-1.5 rounded-lg">
-                    <i class="ph-fill ph-stethoscope text-lg"></i>
-                </div>
-                <h1 class="text-lg font-bold tracking-wide">門診專用視角</h1>
+                <h1 class="text-lg font-bold tracking-wide">血壓紀錄</h1>
             </div>
 
             <!-- 切換按鈕 -->
@@ -1216,7 +1232,7 @@
             <div class="p-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-list-bullets text-slate-400 dark:text-slate-500 text-lg"></i>
-                    <h2 class="text-base font-bold">詳細紀錄</h2>
+                    <h2 id="historyTitle" class="text-base font-bold">詳細紀錄</h2>
                     <span id="recordsFilteredCount" class="text-[10px] font-bold text-slate-400 ml-1"></span>
                 </div>
                 <select id="monthFilter" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 outline-none focus:border-indigo-400 cursor-pointer">
@@ -1224,7 +1240,7 @@
                 </select>
             </div>
             
-            <div class="p-2 bg-white dark:bg-slate-900">
+            <div id="historyTableWrap" class="p-2 bg-white dark:bg-slate-900">
                 <div id="historyTableBody" class="flex flex-col"></div>
                 <div id="loadMoreContainer" class="px-2 pb-2"></div>
 
@@ -5633,6 +5649,26 @@
 
             tableBody.innerHTML = '';
             loadMoreBtnContainer.innerHTML = '';
+            const historyTitle = document.getElementById('historyTitle');
+            if (historyTitle) historyTitle.textContent = isDoctorMode ? '血壓紀錄' : '詳細紀錄';
+
+            if (isDoctorMode) {
+                let rows = bpRecords.filter((record) => record && !record.deleted);
+                if (currentMonthFilter && currentMonthFilter !== 'all') {
+                    rows = rows.filter((record) => record.date && record.date.startsWith(currentMonthFilter));
+                }
+                if (filteredCountEl) {
+                    filteredCountEl.textContent = (currentMonthFilter && currentMonthFilter !== 'all') ? `(${rows.length})` : '';
+                }
+                if (!rows.length) {
+                    emptyStateUI.classList.remove('hidden');
+                    return;
+                }
+                emptyStateUI.classList.add('hidden');
+                rows.sort((a, b) => b.timestamp - a.timestamp);
+                renderDoctorSheet(rows, tableBody);
+                return;
+            }
 
             // 月份篩選
             if (currentMonthFilter && currentMonthFilter !== 'all' && recordsData) {
@@ -5681,6 +5717,51 @@
             }
         }
         
+        function renderDoctorSheet(rows, container) {
+            const table = document.createElement('table');
+            table.id = 'doctorSheet';
+            const thead = document.createElement('thead');
+            const headRow = document.createElement('tr');
+            [
+                ['日期', ''],
+                ['早晚', ''],
+                ['時間', ''],
+                ['收縮壓', 'num'],
+                ['舒張壓', 'num'],
+                ['心率', 'num']
+            ].forEach(([label, cls]) => {
+                const th = document.createElement('th');
+                th.textContent = label;
+                if (cls) th.className = cls;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            rows.forEach((record) => {
+                const tr = document.createElement('tr');
+                const time = new Date(record.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const cells = [
+                    [record.date || '', ''],
+                    [record.timeSlot === '早' ? '早' : '晚', ''],
+                    [time, ''],
+                    [String(record.sys), 'num'],
+                    [String(record.dia), 'num'],
+                    [record.hr === null || record.hr === undefined ? '—' : String(record.hr), 'num']
+                ];
+                cells.forEach(([text, cls]) => {
+                    const td = document.createElement('td');
+                    td.textContent = text;
+                    if (cls) td.className = cls;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            container.appendChild(table);
+        }
+
         function renderTableRecordsChunk(chunk, container) {
             const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
             let lastDate = null;
