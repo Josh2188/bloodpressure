@@ -483,7 +483,7 @@
             border: 1px solid rgba(15, 23, 42, 0.05);
         }
         .dark .mia-hint {
-            color: #94a3b8;
+            color: #e7e5e4;
             background: rgba(15, 23, 42, 0.6);
             border-color: rgba(255, 255, 255, 0.06);
         }
@@ -589,9 +589,9 @@
             color: #94a3b8;
         }
         .dark .mia-slot-chip {
-            border-color: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.16);
             background: rgba(2,6,23,0.45);
-            color: #64748b;
+            color: #e7e5e4;
         }
         .mia-slot-chip.is-done {
             border-style: solid;
@@ -694,7 +694,7 @@
         #latestReadingHero.bp-tier-crisis #latestHeroSys,
         #latestReadingHero.bp-tier-crisis #latestHeroDia { color: #b91c1c; }
         #latestReadingHero [class*="text-white"] { color: #78716c !important; }
-        .dark #latestReadingHero [class*="text-white"] { color: #a8a29e !important; }
+        .dark #latestReadingHero [class*="text-white"] { color: #e7e5e4 !important; }
         #latestHeroTier {
             background: #f5f5f4 !important;
             color: #44403c !important;
@@ -762,6 +762,11 @@
             color: #0f5f58;
             box-shadow: none;
         }
+        .dark .mia-slot-chip.is-now {
+            border-color: rgba(153, 246, 228, 0.55);
+            background: rgba(15, 95, 88, 0.55);
+            color: #ccfbf1;
+        }
         #saveCheckOverlay {
             background: #ffffff !important;
             color: #0f5f58 !important;
@@ -783,6 +788,77 @@
             box-shadow: none !important;
         }
         ::selection { background: rgba(15, 95, 88, 0.16); }
+
+        /* 夜晚：黑底上的灰字拉亮。淺底按鈕維持深色字。 */
+        .dark #smartReadingCard {
+            background: #1c1917 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #f5f5f4;
+        }
+        .dark .text-slate-400,
+        .dark .text-slate-500,
+        .dark .text-slate-600,
+        .dark .text-slate-700,
+        .dark .text-slate-800,
+        .dark .text-stone-400,
+        .dark .text-stone-500,
+        .dark .text-stone-600,
+        .dark .dark\:text-slate-400,
+        .dark .dark\:text-slate-500,
+        .dark .text-teal-800,
+        .dark .mia-tab-active {
+            color: #f5f5f4 !important;
+        }
+        .dark .mia-tab-active { color: #ccfbf1 !important; }
+        .dark .text-stone-700 { color: #f5f5f4 !important; }
+        .dark .swal2-popup [class*="bg-white"]:not([class*="dark:bg-"]) .text-slate-400,
+        .dark .swal2-popup [class*="bg-white"]:not([class*="dark:bg-"]) .text-slate-500,
+        .dark .swal2-popup [class*="bg-white"]:not([class*="dark:bg-"]) .text-slate-600,
+        .dark .swal2-popup [class*="bg-white"]:not([class*="dark:bg-"]) .text-stone-400,
+        .dark .swal2-popup [class*="bg-white"]:not([class*="dark:bg-"]) .text-stone-500,
+        .dark .swal2-popup [class*="bg-stone-50"]:not([class*="dark:bg-"]) .text-slate-500,
+        .dark .swal2-popup [class*="bg-stone-50"]:not([class*="dark:bg-"]) .text-stone-500,
+        .dark .swal2-popup [class*="bg-teal-50"]:not([class*="dark:bg-"]) .text-slate-500,
+        .dark .swal2-popup [class*="bg-teal-50"]:not([class*="dark:bg-"]) .text-teal-800 {
+            color: #44403c !important;
+        }
+        .dark .swal2-popup [class*="bg-teal-50"]:not([class*="dark:bg-"]) .text-teal-800 {
+            color: #115e59 !important;
+        }
+        .dark .swal2-popup [class*="bg-white"]:not([class*="dark:bg-"]),
+        .dark .swal2-popup [class*="bg-stone-50"]:not([class*="dark:bg-"]),
+        .dark .swal2-popup [class*="bg-stone-100"]:not([class*="dark:bg-"]),
+        .dark .swal2-popup [class*="bg-teal-50"]:not([class*="dark:bg-"]) {
+            color: #1c1917;
+        }
+        .dark .medicated-toggle input:checked + div,
+        .dark .medicated-toggle input:checked + div i { color: #ffffff !important; }
+        .dark #analysisContainer #confidenceBadge {
+            background: #292524 !important;
+            color: #f5f5f4 !important;
+        }
+        .dark #latestReadingHero.bp-tier-normal #latestHeroSys,
+        .dark #latestReadingHero.bp-tier-normal #latestHeroDia { color: #34d399; }
+        .dark #latestReadingHero.bp-tier-elevated #latestHeroSys,
+        .dark #latestReadingHero.bp-tier-elevated #latestHeroDia { color: #fbbf24; }
+        .dark #latestReadingHero.bp-tier-stage1 #latestHeroSys,
+        .dark #latestReadingHero.bp-tier-stage1 #latestHeroDia { color: #fdba74; }
+        .dark #latestReadingHero.bp-tier-stage2 #latestHeroSys,
+        .dark #latestReadingHero.bp-tier-stage2 #latestHeroDia { color: #fb7185; }
+        .dark #latestReadingHero.bp-tier-crisis #latestHeroSys,
+        .dark #latestReadingHero.bp-tier-crisis #latestHeroDia { color: #fca5a5; }
+        .dark body.doctor-mode #doctorSheet th,
+        .dark body.doctor-mode #doctorSheet td {
+            color: #f5f5f4;
+            border-bottom-color: rgba(255, 255, 255, 0.14);
+        }
+        .dark body.doctor-mode #doctorSheet th {
+            color: #e7e5e4;
+            background: #292524;
+        }
+        .dark body.doctor-mode #doctorSheet td.alert-1 { color: #fbbf24; }
+        .dark body.doctor-mode #doctorSheet td.alert-2 { color: #fb923c; }
+        .dark body.doctor-mode #doctorSheet td.alert-3 { color: #fca5a5; }
     </style>
 </head>
 <body class="mia-app bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
@@ -4752,7 +4828,7 @@
 
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             Chart.defaults.font.family = '"Noto Sans TC", sans-serif';
-            Chart.defaults.color = isDark ? '#64748b' : '#94a3b8';
+            Chart.defaults.color = isDark ? '#e7e5e4' : '#57534e';
 
             // 1. 長期趨勢與均線解析 (長期 SMA)
             if (longTermChart) longTermChart.destroy();
@@ -5609,10 +5685,13 @@
                         </div>
                     `;
                 } else { 
-                    const emptyBorderStyle = (i === 0) ? 'border: 2px solid #0f5f58' : 'border: 1px dashed #d6d3d1';
+                    const night = document.documentElement.classList.contains('dark');
+                    const emptyBorderStyle = (i === 0)
+                        ? `border: 2px solid ${night ? '#5eead4' : '#0f5f58'}`
+                        : (night ? 'border: 1px dashed rgba(255,255,255,0.28)' : 'border: 1px dashed #d6d3d1');
                     colWrapper.innerHTML += `
-                        <div class="bp-bar" style="background:#f5f5f4; height:32px; ${emptyBorderStyle}">
-                            <span style="color:#a8a29e">—</span>
+                        <div class="bp-bar" style="background:${night ? '#292524' : '#f5f5f4'}; height:32px; ${emptyBorderStyle}">
+                            <span style="color:${night ? '#e7e5e4' : '#78716c'}">—</span>
                         </div>
                     `; 
                 }
@@ -5634,7 +5713,7 @@
             const hasEvening = questToday.hasEvening;
             const todayStatusRow = document.getElementById('todayStatusRow');
             if (todayStatusRow) {
-                const chip = (done, label) => `<span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${done ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-400'}">
+                const chip = (done, label) => `<span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${done ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-100'}">
                         <i class="ph-fill ${done ? 'ph-check-circle' : 'ph-circle'} text-xs"></i>${label}
                     </span>`;
                 todayStatusRow.innerHTML = `
@@ -6020,7 +6099,7 @@
             if (chartInstance) chartInstance.destroy(); 
             
             Chart.defaults.font.family = '"Noto Sans TC", sans-serif'; 
-            Chart.defaults.color = isDarkTheme ? '#64748b' : '#94a3b8'; 
+            Chart.defaults.color = isDarkTheme ? '#e7e5e4' : '#57534e'; 
             
             chartInstance = new Chart(document.getElementById('bpChart').getContext('2d'), {
                 type: 'line',
