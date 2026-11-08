@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>護心行動 x Mia</title>
+    <title>護心行動</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     
     <!-- 引入外部資源 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,6 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
     <!-- Tailwind 設定 -->
     <script>
@@ -350,7 +353,7 @@
             box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
         }
 
-        /* ===== Mia UI 2.0：層次、焦點、一致性 ===== */
+        /* =====  UI 2.0：層次、焦點、一致性 ===== */
         body.mia-app {
             background-color: #f4f6fb;
             background-image:
@@ -525,7 +528,7 @@
             html { scroll-behavior: auto; }
         }
 
-        /* ===== Mia 護心任務：把「量這一筆」變成今天唯一要做的事 ===== */
+        /* =====  護心任務：把「量這一筆」變成今天唯一要做的事 ===== */
         #miaQuestCard {
             background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,241,242,0.7));
             border: 1px solid rgba(244, 63, 94, 0.14);
@@ -628,6 +631,137 @@
             padding-bottom: max(7.5rem, calc(env(safe-area-inset-bottom, 0px) + 5.5rem));
         }
         body.doctor-mode #miaStickyCta { display: none !important; }
+
+        /* ===== 沉穩藍綠：米白底、白卡片、深青重點。血壓綠／黃／紅留在數字上 ===== */
+        body.mia-app {
+            background-color: #f6f3ee !important;
+            background-image: none !important;
+        }
+        .dark body.mia-app {
+            background-color: #161411 !important;
+            background-image: none !important;
+        }
+        header.sticky {
+            background-color: rgba(255, 255, 255, 0.94) !important;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        .dark header.sticky {
+            background-color: rgba(22, 20, 17, 0.94) !important;
+        }
+        #latestReadingHero {
+            background: #ffffff !important;
+            color: #292524 !important;
+            border: 1px solid rgba(15, 95, 88, 0.14);
+            box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .dark #latestReadingHero {
+            background: #1c1917 !important;
+            color: #f5f5f4 !important;
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        #latestReadingHero.bp-tier-normal #latestHeroSys,
+        #latestReadingHero.bp-tier-normal #latestHeroDia { color: #059669; }
+        #latestReadingHero.bp-tier-elevated #latestHeroSys,
+        #latestReadingHero.bp-tier-elevated #latestHeroDia { color: #a16207; }
+        #latestReadingHero.bp-tier-stage1 #latestHeroSys,
+        #latestReadingHero.bp-tier-stage1 #latestHeroDia { color: #c2410c; }
+        #latestReadingHero.bp-tier-stage2 #latestHeroSys,
+        #latestReadingHero.bp-tier-stage2 #latestHeroDia { color: #e11d48; }
+        #latestReadingHero.bp-tier-crisis #latestHeroSys,
+        #latestReadingHero.bp-tier-crisis #latestHeroDia { color: #b91c1c; }
+        #latestReadingHero [class*="text-white"] { color: #78716c !important; }
+        .dark #latestReadingHero [class*="text-white"] { color: #a8a29e !important; }
+        #latestHeroTier {
+            background: #f5f5f4 !important;
+            color: #44403c !important;
+            box-shadow: none !important;
+        }
+        .dark #latestHeroTier { background: #292524 !important; color: #e7e5e4 !important; }
+        #streakCard,
+        #streakCard.glass-streak-indigo,
+        #streakCard.glass-streak-blue,
+        #streakCard.glass-streak-fuchsia,
+        #streakCard.glass-streak-slate,
+        #streakCard.glass-streak-rose,
+        #streakCard.glass-streak-teal {
+            background: #ffffff !important;
+            color: #292524 !important;
+            border: 1px solid rgba(15, 95, 88, 0.14);
+            box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .dark #streakCard {
+            background: #1c1917 !important;
+            color: #f5f5f4 !important;
+        }
+        #streakCard [class*="text-white"] { color: #57534e !important; }
+        .dark #streakCard [class*="text-white"] { color: #d6d3d1 !important; }
+        #miaQuestCard,
+        #miaQuestCard.mia-quest-done,
+        #miaQuestCard.mia-quest-protect,
+        #miaQuestCard.mia-quest-comeback {
+            background: #ffffff !important;
+            border: 1px solid rgba(15, 95, 88, 0.14) !important;
+            box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04) !important;
+        }
+        .dark #miaQuestCard,
+        .dark #miaQuestCard.mia-quest-done {
+            background: #1c1917 !important;
+        }
+        .mia-input-panel,
+        .dark .mia-input-panel {
+            background: #ffffff !important;
+            border: 1px solid rgba(15, 95, 88, 0.14) !important;
+            box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04) !important;
+        }
+        .dark .mia-input-panel { background: #1c1917 !important; }
+        .mia-input-panel::before { display: none; }
+        .mia-btn-save {
+            background: #0f5f58 !important;
+            box-shadow: none !important;
+            filter: none !important;
+        }
+        .mia-heading-icon--rose {
+            background: #e7f3f1 !important;
+            color: #0f5f58 !important;
+            box-shadow: none !important;
+        }
+        #inputData:focus { box-shadow: 0 0 0 4px rgba(15, 95, 88, 0.12); }
+        #smartReadingCard {
+            background: #ffffff !important;
+            border-color: rgba(15, 95, 88, 0.12) !important;
+        }
+        .mia-slot-chip.is-now {
+            border-color: rgba(15, 95, 88, 0.45);
+            background: rgba(15, 95, 88, 0.08);
+            color: #0f5f58;
+            box-shadow: none;
+        }
+        #saveCheckOverlay {
+            background: #ffffff !important;
+            color: #0f5f58 !important;
+            box-shadow: 0 8px 24px rgba(28, 25, 23, 0.12) !important;
+        }
+        #saveCheckOverlay.show {
+            animation: calm-fade 1.4s ease forwards !important;
+        }
+        @keyframes calm-fade {
+            0% { opacity: 0; }
+            15% { opacity: 1; }
+            75% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .crisis-alert, #abnormalAlert.active { animation: none !important; }
+        #emptyState .empty-illust { animation: none !important; }
+        #adherenceBar {
+            background: #0f5f58 !important;
+            box-shadow: none !important;
+        }
+        ::selection { background: rgba(15, 95, 88, 0.16); }
     </style>
 </head>
 <body class="mia-app bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-24 selection:bg-rose-200 transition-colors duration-300">
@@ -638,10 +772,10 @@
             
             <!-- 一般模式標題 -->
             <div class="flex items-center gap-2 hide-in-doctor-mode">
-                <div class="bg-gradient-to-tr from-rose-500 to-pink-500 text-white p-1.5 rounded-lg shadow-sm">
-                    <i class="ph-fill ph-sparkle text-lg"></i>
+                <div class="bg-teal-800 text-white p-1.5 rounded-lg">
+                    <i class="ph-fill ph-heartbeat text-lg"></i>
                 </div>
-                <h1 class="text-lg font-bold tracking-wide">護心行動 <span class="text-xs text-rose-500 bg-rose-100 dark:bg-rose-900/30 px-1.5 py-0.5 rounded ml-1">Mia</span></h1>
+                <h1 class="text-lg font-bold tracking-wide">護心行動</h1>
                 <span id="headerStreakChip" class="hidden ml-0.5 inline-flex items-center gap-0.5 text-[11px] font-black text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-full">
                     <i class="ph-fill ph-flame"></i><span id="headerStreakNum">0</span>
                 </span>
@@ -671,7 +805,7 @@
         <!-- 模組分頁切換（血壓 | 瘦身），醫生模式隱藏 -->
         <div class="max-w-2xl mx-auto px-4 pb-2 hide-in-doctor-mode">
             <div class="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl mia-segment">
-                <button id="tabBp" onclick="window.switchModule('bp')" class="mia-tab-active flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 text-rose-500">
+                <button id="tabBp" onclick="window.switchModule('bp')" class="mia-tab-active flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all bg-white dark:bg-slate-700 text-teal-800">
                     <i class="ph-fill ph-heartbeat"></i> 血壓
                 </button>
                 <button id="tabWeight" onclick="window.switchModule('weight')" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
@@ -703,7 +837,7 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- Mia 今日護心任務（激勵、歡迎回來、保住連續） -->
+        <!--  今日護心任務（激勵、歡迎回來、保住連續） -->
         <!-- ========================================== -->
         <section id="miaQuestCard" class="hide-in-doctor-mode relative overflow-hidden rounded-2xl p-4 transition-all duration-300">
             <div class="relative z-10">
@@ -716,7 +850,7 @@
                             <h2 id="miaQuestTitle" class="text-base font-black text-slate-800 dark:text-slate-100">今日護心任務</h2>
                             <span id="miaQuestStreak" class="hidden text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"></span>
                         </div>
-                        <p id="miaQuestBody" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">量一次就好。我在這裡等你。</p>
+                        <p id="miaQuestBody" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">今天早晚各記一筆就好。</p>
                     </div>
                 </div>
                 <div id="miaQuestSlots" class="mt-3 flex items-center gap-2"></div>
@@ -846,7 +980,7 @@
                         </div>
                     </label>
                     <button onclick="window.showMeasurementGuide()" class="text-[10px] flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider font-bold">
-                        <i class="ph-bold ph-info"></i> 722規範
+                        <i class="ph-bold ph-info"></i> 怎麼量
                     </button>
                 </div>
             </div>
@@ -863,13 +997,13 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- Mia 智能總結（讀全部資料的長篇趨勢解讀） -->
+        <!--  智能總結（讀全部資料的長篇趨勢解讀） -->
         <!-- ========================================== -->
         <section id="smartReadingCard" class="hidden bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-slate-900 rounded-2xl p-4 shadow-sm border border-indigo-100 dark:border-indigo-900/50 hide-in-doctor-mode transition-all duration-300">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-sparkle text-indigo-500 text-lg"></i>
-                    <h2 class="text-base font-bold">Mia 智能總結</h2>
+                    <h2 class="text-base font-bold">這段時間的整理</h2>
                 </div>
                 <button onclick="window.exportMarkdownReport()" class="text-[10px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors font-bold active:scale-95">
                     <i class="ph-bold ph-file-text"></i> 給 AI 看
@@ -896,11 +1030,11 @@
             <div class="flex justify-between items-start mb-3">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-brain text-indigo-500 text-lg"></i>
-                    <h2 class="text-base font-bold">Mia 的臨床解析報告</h2>
+                    <h2 class="text-base font-bold">血壓解讀</h2>
                 </div>
                 <div class="flex flex-col items-end">
                     <div class="text-[10px] text-slate-400 font-bold mb-0.5 uppercase tracking-wider flex items-center gap-1">
-                        分析信心等級 <span id="confidenceBadge" class="px-1.5 py-[1px] rounded text-[9px] bg-slate-100 text-slate-500">計算中</span>
+                        資料夠不夠 <span id="confidenceBadge" class="px-1.5 py-[1px] rounded text-[9px] bg-slate-100 text-slate-500">計算中</span>
                     </div>
                 </div>
             </div>
@@ -908,24 +1042,24 @@
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
                     <div class="text-[10px] text-slate-400 font-bold mb-0.5">
-                        <i class="ph-fill ph-sun text-amber-500"></i> 晨間基線 <span class="text-[8px] font-normal">(SYS/DIA)</span>
+                        <i class="ph-fill ph-sun text-amber-500"></i> 早上平均
                     </div>
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="morningAvgDisplay">--</div>
                 </div>
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
                     <div class="text-[10px] text-slate-400 font-bold mb-0.5">
-                        <i class="ph-fill ph-moon text-indigo-400"></i> 晚間基線 <span class="text-[8px] font-normal">(SYS/DIA)</span>
+                        <i class="ph-fill ph-moon text-indigo-400"></i> 晚上平均
                     </div>
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="eveningAvgDisplay">--</div>
                 </div>
             </div>
             <div class="grid grid-cols-3 gap-2 mb-2">
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
-                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-activity text-rose-400"></i> 脈壓均值 <span class="text-[8px] font-normal">(PP)</span></div>
+                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-activity text-rose-400"></i> 脈壓</div>
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="ppAvgDisplay">--</div>
                 </div>
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
-                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-wave-sine text-violet-400"></i> 變異度 <span class="text-[8px] font-normal">(SD)</span></div>
+                    <div class="text-[10px] text-slate-400 font-bold mb-0.5"><i class="ph-fill ph-wave-sine text-violet-400"></i> 起伏</div>
                     <div class="text-base font-black text-slate-700 dark:text-slate-200" id="bpvSdDisplay">--</div>
                 </div>
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800 text-center">
@@ -938,7 +1072,7 @@
             <div class="rounded-lg p-2.5 mb-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
                 <div class="flex items-center gap-1.5 mb-1.5">
                     <i class="ph-fill ph-target text-indigo-500 text-sm"></i>
-                    <span class="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">目標血壓基準（請依個人共病對照）</span>
+                    <span class="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">一般人的目標血壓</span>
                 </div>
                 <div class="grid grid-cols-3 gap-1.5">
                     <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-indigo-100 dark:border-indigo-900/50">
@@ -950,7 +1084,7 @@
                         <div class="text-xs font-black text-indigo-600 dark:text-indigo-400">&lt;140 / 80</div>
                     </div>
                     <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-indigo-100 dark:border-indigo-900/50">
-                        <div class="text-[9px] text-slate-500 font-bold">CKD / 糖尿病</div>
+                        <div class="text-[9px] text-slate-500 font-bold">腎臟病或糖尿病</div>
                         <div class="text-xs font-black text-indigo-600 dark:text-indigo-400">&lt;130 / 80</div>
                     </div>
                 </div>
@@ -960,7 +1094,7 @@
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <div id="medCard" class="rounded-lg p-2.5 border bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider"><i class="ph-fill ph-arrows-left-right text-violet-500"></i> MED 早晚差</span>
+                        <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider"><i class="ph-fill ph-arrows-left-right text-violet-500"></i> 早上比晚上</span>
                         <span id="medGrade" class="text-[9px] font-black px-1.5 py-0.5 rounded">--</span>
                     </div>
                     <div class="text-base font-black" id="medValue">--</div>
@@ -968,7 +1102,7 @@
                 </div>
                 <div id="hrCard" class="rounded-lg p-2.5 border bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider"><i class="ph-fill ph-heartbeat text-rose-500"></i> 心率 × RPP</span>
+                        <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider"><i class="ph-fill ph-heartbeat text-rose-500"></i> 心跳與負擔</span>
                         <span id="hrGrade" class="text-[9px] font-black px-1.5 py-0.5 rounded">--</span>
                     </div>
                     <div class="text-base font-black" id="hrValue">--</div>
@@ -980,7 +1114,7 @@
             <div id="medicationCompareCard" class="hidden rounded-lg p-2.5 mb-2 border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50">
                 <div class="flex items-center gap-1.5 mb-1.5">
                     <i class="ph-fill ph-pill text-emerald-600"></i>
-                    <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">服藥效益分析（近 30 日）</span>
+                    <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">吃藥之後有沒有比較低（近 30 天）</span>
                 </div>
                 <div class="grid grid-cols-3 gap-1.5 items-stretch">
                     <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
@@ -994,9 +1128,9 @@
                         <div class="text-[9px] text-slate-400" id="medOffCount">0 筆</div>
                     </div>
                     <div class="bg-white dark:bg-slate-900 rounded p-1.5 text-center border border-emerald-100 dark:border-emerald-900/50">
-                        <div class="text-[9px] text-slate-500 font-bold">藥效落差</div>
+                        <div class="text-[9px] text-slate-500 font-bold">相差</div>
                         <div class="text-sm font-black" id="medDelta">--</div>
-                        <div class="text-[9px] text-slate-400">SYS / DIA</div>
+                        <div class="text-[9px] text-slate-400">收縮 / 舒張</div>
                     </div>
                 </div>
                 <div class="text-[10px] text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed" id="medCompareNote"></div>
@@ -1005,7 +1139,7 @@
             <!-- 722 規範執行率 -->
             <div class="rounded-lg p-2.5 mb-2 border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50">
                 <div class="flex items-center justify-between mb-1">
-                    <span class="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider"><i class="ph-fill ph-list-checks"></i> 722 規範執行率（近 7 日）</span>
+                    <span class="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider"><i class="ph-fill ph-list-checks"></i> 這週早晚有沒有都量到</span>
                     <span id="adherenceScore" class="text-sm font-black text-amber-600 dark:text-amber-400">--</span>
                 </div>
                 <div class="w-full bg-amber-100 dark:bg-amber-900/30 rounded-full h-1.5 mb-1.5 overflow-hidden">
@@ -1026,7 +1160,7 @@
             </div>
             
             <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-4 text-center px-2 leading-relaxed">
-                分析基於 ESH 2024 與 TSOC 最新指引。我會幫你盯著趨勢，但覺得不舒服還是要立刻去看醫生喔。
+                這是依你的紀錄整理的參考。不舒服請直接去看醫生。
             </p>
         </section>
 
@@ -1227,7 +1361,7 @@
     <!-- 今日還沒量：固定在底部的行動列 -->
     <button type="button" id="miaStickyCta" onclick="window.focusBpInput()" class="hide-in-doctor-mode fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[min(92vw,32rem)] w-[calc(100%-2rem)] h-12 rounded-2xl text-sm font-black text-white mia-btn-save shadow-lg items-center justify-center gap-2">
         <i class="ph-fill ph-heartbeat"></i>
-        <span id="miaStickyCtaText">Mia 等你量血壓 · 點我記錄</span>
+        <span id="miaStickyCtaText">今天還沒量，點這裡記錄</span>
     </button>
 
     <!-- ========================================== -->
@@ -1237,7 +1371,7 @@
         <div class="sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-slate-200 dark:border-slate-800 z-10 shadow-sm">
             <div class="flex items-center gap-2">
                 <i class="ph-fill ph-chart-polar text-indigo-500 text-xl"></i>
-                <h2 class="text-lg font-bold">Mia 的進階報表</h2>
+                <h2 class="text-lg font-bold">進階報表</h2>
             </div>
             <button onclick="window.toggleAdvancedDashboard()" class="p-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-full transition-colors">
                 <i class="ph-bold ph-x"></i>
@@ -1332,7 +1466,7 @@
     <!-- 核心 JavaScript 邏輯區 -->
     <!-- ========================================== -->
     <script>
-        // 【護心行動 x Mia - 系統憲法與邏輯宣告】
+        // 【護心行動】
         // [商業約束]：
         // 1. 所有紀錄日期格式嚴格輸出為 YYYY-MM-DD。
         // 2. 詳細紀錄列表預設僅展開 30 天內資料，超過的必須透過按鈕觸發展開，以優化長列表效能。
@@ -1413,6 +1547,8 @@
             messagingSenderId: "283887828179",
             appId: "1:283887828179:web:e6495cbd11795422ca2826"
         };
+        // Firebase 主控台 → 專案設定 → Cloud Messaging → Web Push 憑證。空字串時無法向關著的 App 推播。
+        const FIREBASE_VAPID_KEY = "";
 
         let fbAuth = null;          // Firebase Auth 實例
         let fbDb = null;            // Firestore 實例
@@ -1472,11 +1608,11 @@
             const base = 'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all';
             const active = base + ' mia-tab-active bg-white dark:bg-slate-700';
             const idle = base + ' text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300';
-            tabBp.className = (mod === 'bp' ? active + ' text-rose-500' : idle);
+            tabBp.className = (mod === 'bp' ? active + ' text-teal-800' : idle);
             tabW.className = (mod === 'weight' ? active + ' text-teal-500' : idle);
             window.scrollTo(0, 0);
             if (mod === 'weight') updateWeightUI();
-            updateMiaQuest();
+            updateQuest();
         };
 
         window.processWeightInput = function() {
@@ -1897,7 +2033,7 @@
                 const bmi = calcBMI(r.weight, userProfile.height);
                 md += `| ${r.date} | ${t} | ${r.weight} | ${bmi ?? '--'} | ${r.bodyFat ?? '--'} |\n`;
             });
-            md += `\n---\n_由「護心行動 x Mia」瘦身醫生匯出_\n`;
+            md += `\n---\n_由「護心行動」瘦身醫生匯出_\n`;
 
             const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
             const url = URL.createObjectURL(blob);
@@ -1925,7 +2061,7 @@
                 if (document.visibilityState === 'visible') {
                     resetMedicatedToggle();
                     applyTheme();
-                    updateMiaQuest();
+                    updateQuest();
                 }
             });
 
@@ -1959,8 +2095,8 @@
             }
 
             scheduleNextNotification();
-            placeMiaQuestAtTop();
-            updateMiaQuest();
+            placeQuestAtTop();
+            updateQuest();
             setTimeout(async () => {
                 await showOnboarding();
                 await maybeShowComeback();
@@ -2639,12 +2775,12 @@
             let finalLevel = Math.max(sysLevel, diaLevel);
 
             const map = { 
-                6: { label: '危險！快看醫生', color: 'bg-red-600 text-white border-red-700 shadow-sm crisis-alert' }, 
-                5: { label: '第二期高壓', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-rose-300 dark:border-rose-800' }, 
-                4: { label: '第一期高壓', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-800' }, 
-                3: { label: '高壓前期', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800' }, 
+                6: { label: '很高，請盡快就醫', color: 'bg-red-600 text-white border-red-700 shadow-sm crisis-alert' }, 
+                5: { label: '偏高', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border-rose-300 dark:border-rose-800' }, 
+                4: { label: '有點高', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-800' }, 
+                3: { label: '稍微高', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800' }, 
                 2: { label: '正常偏高', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-300 dark:border-indigo-800' }, 
-                1: { label: '超棒的數字', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800' } 
+                1: { label: '正常', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800' } 
             };
             
             return { label: map[finalLevel].label, color: map[finalLevel].color, tier: finalLevel };
@@ -2749,9 +2885,9 @@
             if (eveningRecords.length >= 2) score += 1;
             if (morningRecords.length >= 3 && eveningRecords.length >= 3) score += 1;
 
-            if (score <= 2) return { label: '低 (資料尚少)', style: 'bg-amber-100 text-amber-600 border border-amber-200 dark:border-amber-800' };
-            if (score <= 4) return { label: '中', style: 'bg-indigo-100 text-indigo-600 border border-indigo-200 dark:border-indigo-800' };
-            return { label: '高', style: 'bg-emerald-100 text-emerald-600 border border-emerald-200 dark:border-emerald-800' };
+            if (score <= 2) return { label: '還不夠', style: 'bg-amber-100 text-amber-600 border border-amber-200 dark:border-amber-800' };
+            if (score <= 4) return { label: '還可以', style: 'bg-indigo-100 text-indigo-600 border border-indigo-200 dark:border-indigo-800' };
+            return { label: '夠', style: 'bg-emerald-100 text-emerald-600 border border-emerald-200 dark:border-emerald-800' };
         }
 
         function parseBP(input) {
@@ -2798,20 +2934,20 @@
             const med = avgMornSys - avgEveSys;
             let grade, color, note;
             if (med >= 25) {
-                grade = '顯著高'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
-                note = `早晚收縮壓差 ${med} mmHg，超過 25 強烈警示。請主動告知醫師評估晨間飆高與藥效覆蓋。`;
+                grade = '差很多'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
+                note = `早上比晚上高 ${med}。差這麼多，回診時跟醫師說，看藥效有沒有蓋到早上。`;
             } else if (med >= 15) {
                 grade = '偏高'; color = 'text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300';
-                note = `早晚差 ${med} mmHg，J-HOP 研究指此區間心血管事件風險增加，建議追蹤晨間量測。`;
+                note = `早上比晚上高 ${med}。早上的血壓值得特別看，下次回診可以帶這張。`;
             } else if (med >= 5) {
-                grade = '輕度'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
-                note = `早晚差 ${med} mmHg，輕度節律差異，仍在可接受範圍。`;
+                grade = '一點差'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
+                note = `早上比晚上高 ${med}。有一點差，還算常見。`;
             } else if (med >= -5) {
-                grade = '穩定'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
-                note = `早晚差 ${med} mmHg，節律穩定，自律神經調節良好。`;
+                grade = '差不多'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
+                note = `早上和晚上差不多（差 ${med}）。這樣很穩。`;
             } else {
-                grade = '反向'; color = 'text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
-                note = `晚間反而比早晨高 ${Math.abs(med)} mmHg，與反勺型相關，請積極排查 OSA / CKD。`;
+                grade = '晚上更高'; color = 'text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
+                note = `晚上反而比早上高 ${Math.abs(med)}。晚上血壓沒降下來，回診時跟醫師說，也可以問要不要檢查睡眠。`;
             }
             return { med, grade, color, note };
         }
@@ -2834,22 +2970,21 @@
             else { hrGrade = '偏慢'; }
             // RPP 分級
             if (avgRpp >= 15000) {
-                rppGrade = '高負荷'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
-                note = `心肌耗氧量 ${avgRpp}，遠超正常上限。心肌缺血風險明顯升高，請儘速回診評估冠狀動脈狀況。`;
+                rppGrade = '負擔大'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
+                note = `心臟負擔 ${avgRpp}（血壓乘心跳），明顯偏高。請盡快回診。`;
             } else if (avgRpp >= 12000) {
                 rppGrade = '偏高'; color = 'text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300';
-                note = `心肌耗氧量 ${avgRpp}，與左心室肥厚、運動耐受度下降相關，需減少咖啡因與壓力源。`;
+                note = `心臟負擔 ${avgRpp}，偏高。少一點咖啡，壓力大的日子也留意一下。`;
             } else if (avgRpp >= 10000) {
-                rppGrade = '注意'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
-                note = `心肌耗氧量 ${avgRpp}，略高於理想，可增加有氧運動降低靜息心率。`;
+                rppGrade = '稍高'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
+                note = `心臟負擔 ${avgRpp}，比理想稍高。多走一走，安靜時的心跳通常會慢下來。`;
             } else {
-                rppGrade = '正常'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
-                note = `心肌耗氧量 ${avgRpp}（< 10,000），心臟負荷理想。`;
+                rppGrade = '還好'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
+                note = `心臟負擔 ${avgRpp}，在輕鬆的範圍。`;
             }
-            // 心率附加說明
             let hrExtra = '';
-            if (avgHr > 90) hrExtra = ` 靜息心率 ${avgHr} bpm 過快（>90），CV 風險 +30%。`;
-            else if (avgHr < 60) hrExtra = ` 靜息心率 ${avgHr} bpm 偏慢，若無服藥需就醫評估節律。`;
+            if (avgHr > 90) hrExtra = ` 安靜時心跳 ${avgHr}，偏快。`;
+            else if (avgHr < 60) hrExtra = ` 安靜時心跳 ${avgHr}，偏慢。沒有頭暈就先觀察；有不舒服再檢查。`;
             return { hasData: true, avgHr, avgRpp, hrGrade, rppGrade, color, note: note + hrExtra };
         }
 
@@ -2879,9 +3014,9 @@
             } else if (deltaSys >= 5) {
                 note = `服藥後收縮壓下降 ${deltaSys} mmHg，藥效中等。若仍未達目標，可與醫師討論是否調整劑量或加入第二種藥物。`;
             } else if (deltaSys >= 0) {
-                note = `服藥前後血壓差距僅 ${deltaSys} mmHg，藥效有限。可能原因：藥物選擇不適合、服藥時機不對、或合併耐藥性（resistant hypertension）。建議回診討論。`;
+                note = `吃藥前後只差 ${deltaSys}。藥看起來幫助不大，回診時跟醫師討論要不要調整。`;
             } else {
-                note = `服藥後血壓反而高出 ${-deltaSys} mmHg（注意：可能是因為高血壓日才會服藥，存在「指標性偏差」）。請與醫師討論真實藥效評估方式。`;
+                note = `勾了「已服藥」的那幾筆，平均反而高 ${-deltaSys}。有時是血壓高的日子才特別記得吃藥，不一定代表藥沒效。回診時一起看。`;
             }
             return { hasComparison: true, onAvg, offAvg, deltaSys, deltaDia, onCount: on.length, offCount: off.length, note };
         }
@@ -2915,16 +3050,16 @@
             let grade, note;
             if (zeroDays === 0 && fullDays >= 5) {
                 grade = '優良';
-                note = `近 7 天天天有量，其中 <strong>${fullDays} 天</strong>早晚都齊。資料品質充分，醫師可信賴此數據調藥。`;
+                note = `這 7 天天天都有量，其中 <strong>${fullDays} 天</strong>早晚都有。醫師看得出趨勢。`;
             } else if (zeroDays === 0) {
                 grade = '良好';
-                note = `近 7 天<strong>天天有量</strong>（早晚都齊 ${fullDays} 天、單時段 ${halfDays} 天）。若能盡量讓上午與傍晚各量一次，分析會更精確。`;
+                note = `這 7 天<strong>天天有量</strong>。早晚都有的是 ${fullDays} 天，只量到一個時段的是 ${halfDays} 天。`;
             } else if (coverageDays >= 5) {
-                grade = '達標';
-                note = `有量測 ${coverageDays} 天、缺漏 <strong>${zeroDays}</strong> 天。整體規律，但建議補齊缺漏日提高分析精度。`;
+                grade = '還可以';
+                note = `有量 ${coverageDays} 天，空了 <strong>${zeroDays}</strong> 天。`;
             } else {
-                grade = '不足';
-                note = `近 7 天缺漏 <strong>${zeroDays}</strong> 天、僅 ${coverageDays} 天有量。資料密度過低，建議使用「設定提醒」建立習慣。`;
+                grade = '偏少';
+                note = `這 7 天空了 <strong>${zeroDays}</strong> 天，只有 ${coverageDays} 天有量。可以打開提醒。`;
             }
             return { score, strictScore, grade, note, fullDays, halfDays, zeroDays, coverageDays };
         }
@@ -2993,11 +3128,11 @@
             return 'normal';
         }
         const TIER_META = {
-            crisis:   { label: '危機 ≥160/100', heroClass: 'bp-tier-crisis',   tintClass: 'trend-card-tint-crisis' },
-            stage2:   { label: '二期高壓',       heroClass: 'bp-tier-stage2',   tintClass: 'trend-card-tint-stage2' },
-            stage1:   { label: '一期高壓',       heroClass: 'bp-tier-stage1',   tintClass: 'trend-card-tint-stage1' },
-            elevated: { label: '偏高 120–129',   heroClass: 'bp-tier-elevated', tintClass: 'trend-card-tint-elevated' },
-            normal:   { label: '正常',           heroClass: 'bp-tier-normal',   tintClass: 'trend-card-tint-normal' }
+            crisis:   { label: '很高，請留意', heroClass: 'bp-tier-crisis',   tintClass: 'trend-card-tint-crisis' },
+            stage2:   { label: '偏高',         heroClass: 'bp-tier-stage2',   tintClass: 'trend-card-tint-stage2' },
+            stage1:   { label: '有點高',       heroClass: 'bp-tier-stage1',   tintClass: 'trend-card-tint-stage1' },
+            elevated: { label: '稍微高',       heroClass: 'bp-tier-elevated', tintClass: 'trend-card-tint-elevated' },
+            normal:   { label: '正常',         heroClass: 'bp-tier-normal',   tintClass: 'trend-card-tint-normal' }
         };
 
         function formatTimeAgo(ts) {
@@ -3451,19 +3586,19 @@
             });
         }
 
-        // 瀏覽器通知排程（App 開啟時生效）
+        // 頁面開著時的備援提醒。雲端推播開啟後就不再從這裡響，避免響兩次。
         let notifTimerId = null;
         function scheduleNextNotification() {
             if (notifTimerId) clearTimeout(notifTimerId);
+            notifTimerId = null;
+            if (localStorage.getItem('pushMode') === 'cloud') return;
             if (!('Notification' in window) || Notification.permission !== 'granted') return;
             if (localStorage.getItem('notifEnabled') !== '1') return;
 
             const now = new Date();
-            const morning = getReminderCopy(7);
-            const evening = getReminderCopy(21);
             const targets = [
-                { hour: 7, min: 0, title: morning.title, body: morning.body },
-                { hour: 21, min: 0, title: evening.title, body: evening.body }
+                { hour: 7, min: 20 },
+                { hour: 21, min: 20 }
             ];
             let nextDelay = Infinity;
             let nextTarget = null;
@@ -3476,9 +3611,10 @@
             });
             if (!nextTarget) return;
             notifTimerId = setTimeout(() => {
-                try {
-                    new Notification(nextTarget.title, { body: nextTarget.body, icon: '', tag: 'mia-bp-reminder' });
-                } catch (e) {}
+                const copy = getReminderCopy(nextTarget.hour);
+                if (copy) {
+                    try { new Notification(copy.title, { body: copy.body, tag: 'bp-reminder' }); } catch (e) {}
+                }
                 scheduleNextNotification();
             }, Math.min(nextDelay, 2147483000));
         }
@@ -3628,14 +3764,21 @@
             return best;
         }
 
+        function slotOf(record) {
+            if (!record || record.deleted) return '';
+            if (record.timeSlot === '早' || record.timeSlot === '晚') return record.timeSlot;
+            const hour = new Date(Number(record.timestamp) || 0).getHours();
+            return (hour >= 4 && hour < 15) ? '早' : '晚';
+        }
+
         function getTodayQuest() {
             const todayKey = getLogicalDateString(Date.now());
-            const recs = bpRecords.filter(r => r.date === todayKey);
+            const recs = bpRecords.filter(r => r && !r.deleted && r.date === todayKey);
             const hour = new Date().getHours();
             return {
                 date: todayKey,
-                hasMorning: recs.some(r => r.timeSlot === '早'),
-                hasEvening: recs.some(r => r.timeSlot === '晚'),
+                hasMorning: recs.some(r => slotOf(r) === '早'),
+                hasEvening: recs.some(r => slotOf(r) === '晚'),
                 currentSlot: (hour >= 4 && hour < 15) ? '早' : '晚',
                 count: recs.length
             };
@@ -3663,17 +3806,17 @@
             return [7, 14, 30, 60, 100].find(n => n > streak) || null;
         }
 
-        function getMiaQuestCopy(quest, streak, daysSince) {
+        function getQuestCopy(quest, streak, daysSince) {
             const hour = new Date().getHours();
             const done = quest.hasMorning && quest.hasEvening;
 
             if (done) {
                 return {
                     tone: 'done',
-                    title: '今日任務完成',
+                    title: '今天早晚都記好了',
                     body: streak >= 2
-                        ? `Josh弟弟超棒，連續 ${streak} 天都有量。去休息，這兩筆我幫你看著。`
-                        : '早、晚兩筆都到了。量本身就是在護心，數字待會再看。',
+                        ? `已連續 ${streak} 天。今天可以休息了。`
+                        : '早上和晚上都有紀錄。今天這樣就夠了。',
                     cta: null,
                     sticky: null
                 };
@@ -3682,93 +3825,78 @@
             if (daysSince === null) {
                 return {
                     tone: 'fresh',
-                    title: '第一筆，我等很久了',
-                    body: '不用一次做完美。坐下、休息 5 分鐘，盲打數字就好。',
-                    cta: '記錄第一筆血壓',
-                    sticky: '第一筆只要 30 秒 · 點我記錄'
+                    title: '先記第一筆',
+                    body: '坐下休息幾分鐘，再輸入數字就好。',
+                    cta: '記錄第一筆',
+                    sticky: '記下第一筆血壓'
                 };
             }
 
-            if (daysSince >= 7 && !quest.hasMorning && !quest.hasEvening) {
+            if (daysSince >= 2 && !quest.hasMorning && !quest.hasEvening) {
+                const extra = daysSince >= 7 ? '以前的空白不用補，現在量一筆就好。' : '';
                 return {
                     tone: 'comeback',
-                    title: '我還在，沒有要算舊帳',
-                    body: `已經 ${daysSince} 天沒量了。以前的空白不用補，這一筆就算重新開始。`,
-                    cta: '從這一筆重新開始',
-                    sticky: '中斷沒關係 · 量一次就接得上'
+                    title: '該量一下了',
+                    body: `欸，你已經 ${daysSince} 天沒量了，該量了吧？${extra}`,
+                    cta: '現在量一筆',
+                    sticky: `已經 ${daysSince} 天沒量`
                 };
             }
 
-            if (daysSince >= 3 && !quest.hasMorning && !quest.hasEvening) {
+            if (quest.hasMorning && !quest.hasEvening && hour >= 4 && hour < 15) {
                 return {
-                    tone: 'comeback',
-                    title: '歡迎回來',
-                    body: '這幾天沒量，我知道有時候真的不想面對機器。量一次就好，我不會唸你。',
-                    cta: '量這一筆就好',
-                    sticky: '歡迎回來 · 點我記一筆'
-                };
-            }
-
-            if (streak >= 3 && !quest.hasMorning && !quest.hasEvening) {
-                return {
-                    tone: 'protect',
-                    title: `連續 ${streak} 天，差這一筆`,
-                    body: '不用想血壓高不高。先量，才能保住這條連續紀錄。',
-                    cta: '保住連續紀錄',
-                    sticky: `連續 ${streak} 天快斷了 · 點我保住`
+                    tone: 'morning',
+                    title: '早上已經記好了',
+                    body: '晚上再量一次，今天就齊。如果 21:20 還沒量，會再提醒你。',
+                    cta: null,
+                    sticky: null
                 };
             }
 
             if (!quest.hasMorning && hour >= 4 && hour < 15) {
                 return {
                     tone: 'morning',
-                    title: '早安，先量再出門',
-                    body: '起床後坐著休息 5 分鐘，量完再喝咖啡。我只要這一筆。',
-                    cta: '記錄早晨血壓',
-                    sticky: '早晨還沒量 · 點我記錄'
+                    title: '早上還沒量',
+                    body: streak >= 3
+                        ? `已連續 ${streak} 天。起床後坐一下，量完再開始今天。`
+                        : '起床後坐一下，量完再喝咖啡。',
+                    cta: '記錄早上血壓',
+                    sticky: '早上還沒量'
                 };
             }
 
             if (quest.hasMorning && !quest.hasEvening && (hour >= 15 || hour < 4)) {
                 return {
                     tone: 'evening',
-                    title: '晚上這筆，今天就過關',
-                    body: '早上已經量了。睡前再一筆，今天的 722 就達標。',
-                    cta: '記錄睡前血壓',
-                    sticky: '再一筆就過關 · 點我記錄'
+                    title: '晚上再量一次就好',
+                    body: '早上已經有了。睡前再記一筆，今天就齊。',
+                    cta: '記錄晚上血壓',
+                    sticky: '晚上還沒量'
                 };
             }
 
             if (!quest.hasEvening && (hour >= 15 || hour < 4)) {
                 return {
                     tone: 'evening',
-                    title: '睡前量一次就好',
-                    body: '今天還沒有紀錄。坐下、放鬆、打完數字就可以休息。',
-                    cta: '記錄睡前血壓',
-                    sticky: '睡前量一次 · 點我記錄'
-                };
-            }
-
-            if (!quest.hasMorning && hour >= 15) {
-                return {
-                    tone: 'missed',
-                    title: '早上漏了也沒關係',
-                    body: '晚上再量一次，今天就不算空白。有量就贏過沒量。',
-                    cta: '現在補一筆',
-                    sticky: '今天還是空白 · 點我補一筆'
+                    title: quest.hasMorning ? '晚上還沒量' : '今天還沒量',
+                    body: quest.hasMorning
+                        ? '睡前坐一下，量完就可以休息。'
+                        : '早上漏了沒關係。現在量一次，今天就不算空白。',
+                    cta: '記錄晚上血壓',
+                    sticky: quest.hasMorning ? '晚上還沒量' : '今天還沒量'
                 };
             }
 
             return {
                 tone: 'nudge',
-                title: quest.currentSlot === '早' ? '早晨這一筆還空著' : '晚上這一筆還空著',
-                body: '不用一次做滿。現在量的這一段，才是最重要的。',
+                title: quest.currentSlot === '早' ? '早上這一筆還沒記' : '晚上這一筆還沒記',
+                body: '現在量的這一筆就好。',
                 cta: '現在就量',
-                sticky: '還差一筆 · 點我記錄'
+                sticky: '還差一筆'
             };
         }
 
-        function placeMiaQuestAtTop() {
+        function placeQuestAtTop() {
             const view = document.getElementById('viewBP');
             const quest = document.getElementById('miaQuestCard');
             const input = document.getElementById('bpInputPanel');
@@ -3794,8 +3922,8 @@
             }, 280);
         };
 
-        function updateMiaQuest() {
-            placeMiaQuestAtTop();
+        function updateQuest() {
+            placeQuestAtTop();
             const card = document.getElementById('miaQuestCard');
             if (!card) return;
 
@@ -3803,7 +3931,7 @@
             const streak = calculateCurrentStreak();
             const best = calculateBestStreak();
             const daysSince = getDaysSinceLastMeasurement();
-            const copy = getMiaQuestCopy(quest, streak, daysSince);
+            const copy = getQuestCopy(quest, streak, daysSince);
             const rank = getHabitRank(bpRecords.length);
             const next = nextStreakMilestone(streak);
 
@@ -3816,15 +3944,9 @@
             if (avatar) {
                 avatar.innerHTML = copy.tone === 'done'
                     ? '<i class="ph-fill ph-check-circle text-xl"></i>'
-                    : copy.tone === 'protect'
-                        ? '<i class="ph-fill ph-flame text-xl"></i>'
-                        : '<i class="ph-fill ph-heart text-xl"></i>';
-                avatar.className = 'flex-shrink-0 w-11 h-11 rounded-2xl text-white flex items-center justify-center shadow-md ' + (
-                    copy.tone === 'done'
-                        ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
-                        : copy.tone === 'protect'
-                            ? 'bg-gradient-to-br from-amber-400 to-orange-500'
-                            : 'bg-gradient-to-br from-rose-400 to-pink-500'
+                    : '<i class="ph-fill ph-heart text-xl"></i>';
+                avatar.className = 'flex-shrink-0 w-11 h-11 rounded-2xl text-white flex items-center justify-center ' + (
+                    copy.tone === 'done' ? 'bg-emerald-700' : 'bg-teal-800'
                 );
             }
 
@@ -3841,7 +3963,7 @@
             if (streakEl) {
                 if (streak > 0) {
                     streakEl.classList.remove('hidden');
-                    streakEl.textContent = `🔥 ${streak} 天`;
+                    streakEl.textContent = `連續 ${streak} 天`;
                 } else if (best > 0) {
                     streakEl.classList.remove('hidden');
                     streakEl.textContent = `最佳 ${best} 天還在`;
@@ -3930,16 +4052,16 @@
                         <div class="w-16 h-16 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center mb-3 shadow-md">
                             <i class="ph-fill ph-heart text-3xl text-white"></i>
                         </div>
-                        <div class="text-lg font-black mb-2">Josh弟弟，我還在</div>
+                        <div class="text-lg font-black mb-2">該量一下了</div>
                         <div class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed text-center px-2">
-                            已經 <strong class="text-rose-500">${days}</strong> 天沒量了。不想量很正常，機器有時候真的很煩。<br/><br/>
-                            不用補以前的空白。${best > 0 ? `你曾經連續量過 <strong>${best}</strong> 天，那份紀錄還在。<br/><br/>` : ''}
-                            現在這一筆，就算重新開始。
+                            欸，你已經 <strong class="text-teal-800">${days}</strong> 天沒量了，該量了吧？<br/><br/>
+                            以前的空白不用補。${best > 0 ? `你曾經連續量過 <strong>${best}</strong> 天，那份紀錄還在。<br/><br/>` : ''}
+                            現在這一筆就好。
                         </div>
                     </div>
                 `,
                 confirmButtonText: '好，現在量',
-                confirmButtonColor: '#e11d48',
+                confirmButtonColor: '#0f5f58',
                 showCancelButton: true,
                 cancelButtonText: '先看看'
             });
@@ -3947,17 +4069,17 @@
         }
 
         function getReminderCopy(hour) {
-            const streak = calculateCurrentStreak();
             const quest = getTodayQuest();
-            if (hour < 12) {
-                if (quest.hasMorning) return { title: '☀️ Mia', body: '早晨已經量了，讚。晚上見。' };
-                if (streak >= 3) return { title: '☀️ Mia', body: `連續 ${streak} 天了，早晨量一次就能保住。` };
-                return { title: '☀️ Mia', body: 'Josh弟弟，起床後坐 5 分鐘，量完再喝咖啡。' };
+            const days = getDaysSinceLastMeasurement();
+            const isMorning = hour < 15;
+            if (isMorning && quest.hasMorning) return null;
+            if (!isMorning && quest.hasEvening) return null;
+            if (days !== null && days >= 2 && !quest.hasMorning && !quest.hasEvening) {
+                return { title: '護心行動', body: `欸，你已經 ${days} 天沒量了，該量了吧？` };
             }
-            if (quest.hasEvening && quest.hasMorning) return { title: '🌙 Mia', body: '今天早、晚都量了。好好休息。' };
-            if (quest.hasMorning) return { title: '🌙 Mia', body: '早上已經量了，睡前再一筆今天就過關。' };
-            if (streak >= 3) return { title: '🌙 Mia', body: `連續 ${streak} 天快斷了，現在量一次就能保住。` };
-            return { title: '🌙 Mia', body: '睡前量一次就好，30 秒。我等你。' };
+            if (isMorning) return { title: '護心行動', body: '早上還沒量。坐一下，量完再開始今天。' };
+            if (quest.hasMorning) return { title: '護心行動', body: '晚上還沒量。睡前再記一筆，今天就齊。' };
+            return { title: '護心行動', body: '今天還沒量。現在坐一下，量完就可以休息。' };
         }
 
         // 里程碑慶祝
@@ -3982,8 +4104,8 @@
                 ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
                 : 'linear-gradient(135deg, #10b981, #6366f1)';
             const title = m.type === 'streak'
-                ? `🔥 連續量測 ${m.n} 天！`
-                : `🏆 累積 ${m.n} 筆紀錄！`;
+                ? `連續量了 ${m.n} 天`
+                : `已經累積 ${m.n} 筆`;
             const msg = m.type === 'streak'
                 ? '持之以恆是控壓的關鍵，繼續保持！'
                 : '感謝你認真記錄每一筆，數據愈多分析愈準確。';
@@ -3992,7 +4114,7 @@
                     ...getSwalConfig(),
                     html: `
                         <div class="flex flex-col items-center py-2">
-                            <div class="w-20 h-20 rounded-full flex items-center justify-center mb-3 shadow-lg" style="background:${colorBg}">
+                            <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3" style="background:#0f5f58">
                                 <i class="ph-fill ${icon} text-4xl text-white"></i>
                             </div>
                             <div class="text-lg font-black mb-1">${title}</div>
@@ -4013,13 +4135,13 @@
             const steps = [
                 {
                     icon: 'ph-hand-waving',
-                    title: '嗨，我是 Mia',
-                    body: '我會幫你記錄每天的血壓、分析趨勢，並提醒你回診與服藥。先用 30 秒帶你看完三件事就好。'
+                    title: '護心行動',
+                    body: '這裡用來記每天的血壓，也會用白話告訴你這段時間穩不穩。先看三件事就好。'
                 },
                 {
                     icon: 'ph-clipboard-text',
-                    title: '722 居家量測規範',
-                    body: '<strong class="text-rose-500">7</strong> 天連續量測｜每天 <strong class="text-rose-500">2</strong> 次（早起後、睡前）｜每次連量 <strong class="text-rose-500">2</strong> 回取平均。<br/><br/>這是台灣高血壓學會建議的標準流程。'
+                    title: '一天量兩次',
+                    body: '連續 <strong class="text-teal-800">7</strong> 天。每天 <strong class="text-teal-800">2</strong> 次，一次在早上、一次在睡前。每次連量 <strong class="text-teal-800">2</strong> 回，中間休息一下，這裡會幫你平均。'
                 },
                 {
                     icon: 'ph-keyboard',
@@ -4045,7 +4167,7 @@
                     confirmButtonText: i === steps.length - 1 ? '開始使用' : '下一步',
                     showCancelButton: i === 0,
                     cancelButtonText: '跳過',
-                    confirmButtonColor: '#e11d48',
+                    confirmButtonColor: '#0f5f58',
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 });
@@ -4112,13 +4234,13 @@
             const has48hCrisis = records.filter(r => r.timestamp >= now - 48 * 3600000 && (r.sys >= 160 || r.dia >= 100)).length >= 2;
             let verdict;
             if (has48hCrisis) {
-                verdict = { level: 'crisis', emoji: '🚨', title: '需要立即就醫', summary: `過去 48 小時內出現多次危機值（≥160/100），代表血壓控制嚴重不穩，請今日內就醫。` };
+                verdict = { level: 'crisis', emoji: '', title: '需要今天就醫', summary: `過去 48 小時有不止一次到 160/100 以上。請今天去看醫生。` };
             } else if (avgSys >= 140 || avgDia >= 90) {
-                verdict = { level: 'high', emoji: '🔴', title: '血壓偏高，需要積極處理', summary: `這段期間平均 ${avgSys}/${avgDia}，已達高血壓範圍。建議盡快回診討論用藥與生活調整。` };
+                verdict = { level: 'high', emoji: '', title: '血壓偏高', summary: `這段平均 ${avgSys}/${avgDia}，偏高。建議盡快回診，一起看藥和飲食。` };
             } else if (avgSys >= 130 || avgDia >= 80) {
-                verdict = { level: 'elevated', emoji: '🟠', title: '血壓偏高一點，可再收緊', summary: `平均 ${avgSys}/${avgDia} 落在高血壓前期，達標率 ${ttr}%。離理想還差一點，持續追蹤＋生活調整有機會拉回。` };
+                verdict = { level: 'elevated', emoji: '', title: '有一點高', summary: `平均 ${avgSys}/${avgDia}。低於 130/80 的比例是 ${ttr}%。還可以再穩一點。` };
             } else {
-                verdict = { level: 'good', emoji: '🟢', title: '控制得不錯，維持就好', summary: `平均 ${avgSys}/${avgDia}、達標率 ${ttr}%，整體穩定。重點是維持現在的習慣。` };
+                verdict = { level: 'good', emoji: '', title: '目前控制得不錯', summary: `平均 ${avgSys}/${avgDia}。低於 130/80 的比例是 ${ttr}%。繼續現在的習慣就好。` };
             }
 
             // ---- 關鍵發現 paragraphs ----
@@ -4130,7 +4252,7 @@
             ov += ` 平均血壓 <strong>${avgSys}/${avgDia}</strong>`;
             if (avgHr !== null) ov += `、平均心率 ${avgHr} bpm`;
             ov += `，收縮壓區間 ${minSys}–${maxSys}。`;
-            paragraphs.push({ icon: '📊', title: '整體概況', text: ov });
+            paragraphs.push({ icon: '', title: '整體', text: ov });
 
             // 趨勢
             if (trend) {
@@ -4138,7 +4260,7 @@
                 if (trend.delta <= -3) t = `好消息：近 30 天收縮壓平均 ${trend.cur}，比前一個月（${trend.prev}）<strong>下降了 ${Math.abs(trend.delta)} mmHg</strong>，方向正確，繼續保持。`;
                 else if (trend.delta >= 3) t = `留意：近 30 天收縮壓平均 ${trend.cur}，比前一個月（${trend.prev}）<strong>上升了 ${trend.delta} mmHg</strong>。回想最近是否有壓力、睡眠、飲食或天氣變化，必要時回診。`;
                 else t = `近 30 天收縮壓平均 ${trend.cur}，和前一個月（${trend.prev}）幾乎持平，狀態穩定。`;
-                paragraphs.push({ icon: '📈', title: '長期趨勢', text: t });
+                paragraphs.push({ icon: '', title: '和上個月比', text: t });
             }
 
             // 早晚節律 + dipping
@@ -4146,38 +4268,38 @@
                 let r = `早晨均壓 <strong>${mSys}/${mDia}</strong>、晚間 <strong>${eSys}/${eDia}</strong>`;
                 if (medAnalysis) r += `，早晚收縮壓差 ${medAnalysis.med} mmHg（${medAnalysis.grade}）。`;
                 if (dip.sufficient) {
-                    const dipName = { reverse: '反勺型（夜間反而升高，風險最高）', non: '不降型 Non-Dipper', normal: '正常勺型（理想）', extreme: '極端降壓型' }[dip.pattern];
+                    const dipName = { reverse: '晚上沒降、反而更高', non: '晚上幾乎沒下降', normal: '晚上有正常下降', extreme: '晚上掉得比較多' }[dip.pattern];
                     r += ` 夜間降壓型態為「<strong>${dipName}</strong>」（平均降壓率 ${dip.avgPct}%）。`;
-                    if (dip.pattern === 'reverse' || dip.pattern === 'non') r += ' 此型態與心血管風險相關，建議回診時主動提及，並排查睡眠呼吸中止與腎功能。';
+                    if (dip.pattern === 'reverse' || dip.pattern === 'non') r += ' 回診時跟醫師說，也可以問要不要檢查睡眠和腎臟。';
                 } else {
                     r += ` 早晚配對天數還不足（需 ${dip.totalNeeded || 5} 天），暫無法分類夜間降壓型態，請持續每天早晚各量一次。`;
                 }
-                paragraphs.push({ icon: '🌗', title: '早晚節律', text: r });
+                paragraphs.push({ icon: '', title: '早上和晚上', text: r });
             }
 
             // 藥效
             if (medEffect.hasComparison) {
-                paragraphs.push({ icon: '💊', title: '服藥效益', text: `服藥後平均 ${medEffect.onAvg.sys}/${medEffect.onAvg.dia}、服藥前 ${medEffect.offAvg.sys}/${medEffect.offAvg.dia}，` + medEffect.note.replace(/<\/?strong>/g, '') });
+                paragraphs.push({ icon: '', title: '吃藥之後', text: `服藥後平均 ${medEffect.onAvg.sys}/${medEffect.onAvg.dia}、服藥前 ${medEffect.offAvg.sys}/${medEffect.offAvg.dia}，` + medEffect.note.replace(/<\/?strong>/g, '') });
             }
 
             // 心率/RPP
             if (rpp.hasData && (rpp.rppGrade !== '正常' || rpp.hrGrade !== '正常')) {
-                paragraphs.push({ icon: '❤️', title: '心率與心肌負荷', text: rpp.note });
+                paragraphs.push({ icon: '', title: '心跳', text: rpp.note });
             }
 
             // 變異度
             if (sysSd !== null && sysSd >= 15) {
-                paragraphs.push({ icon: '🌊', title: '血壓變異度', text: `收縮壓標準差 ${sysSd} mmHg，起伏偏大。血壓變異度高本身也是心血管風險因子，建議固定每天量測的時間、姿勢與情境，讓數值更具可比性。` });
+                paragraphs.push({ icon: '', title: '起伏', text: `收縮壓上下差得比較大（標準差 ${sysSd}）。盡量固定時間、坐著量，數字才比較得起來。` });
             }
 
             // ---- 行動建議 ----
             const actions = [];
             if (verdict.level === 'crisis') actions.push('今日內就醫，攜帶這份紀錄給醫師。');
             if (avgDia >= 80 || (mDia !== null && mDia >= 82)) actions.push('舒張壓偏高：減少鹽分與酒精、規律有氧運動、留意睡眠品質。');
-            if (medAnalysis && medAnalysis.med >= 15) actions.push('早晚差偏大：與醫師討論晨間藥效覆蓋（是否換長效或分次給藥）。');
-            if (dip.sufficient && (dip.pattern === 'reverse' || dip.pattern === 'non')) actions.push('夜間血壓降不夠：排查睡眠呼吸中止（打鼾/白天嗜睡）與腎功能。');
-            if (adherence.zeroDays >= 2) actions.push(`近 7 天有 ${adherence.zeroDays} 天沒量：用「設定提醒」建立每天早晚量測習慣。`);
-            if (rpp.hasData && rpp.avgHr > 80) actions.push('靜息心率偏快：減少咖啡因、增加有氧運動、管理壓力。');
+            if (medAnalysis && medAnalysis.med >= 15) actions.push('早上比晚上高不少：回診時問醫師，藥效有沒有蓋到早上。');
+            if (dip.sufficient && (dip.pattern === 'reverse' || dip.pattern === 'non')) actions.push('晚上血壓降不夠：如果會打鼾或白天很想睡，回診時跟醫師說。');
+            if (adherence.zeroDays >= 2) actions.push(`近 7 天有 ${adherence.zeroDays} 天沒量。可以打開每天 7:20 和 21:20 的提醒。`);
+            if (rpp.hasData && rpp.avgHr > 80) actions.push('安靜時心跳偏快：少喝一點咖啡，多走路。');
             if (actions.length === 0) actions.push('維持目前的量測與生活習慣，定期回診即可。');
             actions.push('本解讀僅供參考，不能取代醫師診斷，請以回診評估為準。');
 
@@ -4201,20 +4323,20 @@
         // 單筆異常旗標（供智能解讀與醫生模式共用）
         function getAnomalyFlags(r) {
             const flags = [];
-            if (r.sys >= 160 || r.dia >= 100) flags.push('危機值');
-            else if (r.sys >= 140 || r.dia >= 90) flags.push('高血壓');
-            else if (r.sys >= 130) flags.push('SYS偏高');
-            else if (r.dia >= 80) flags.push('DIA偏高');
+            if (r.sys >= 160 || r.dia >= 100) flags.push('很高');
+            else if (r.sys >= 140 || r.dia >= 90) flags.push('偏高');
+            else if (r.sys >= 130) flags.push('收縮壓偏高');
+            else if (r.dia >= 80) flags.push('舒張壓偏高');
             if (r.sys < 90 || r.dia < 60) flags.push('偏低');
-            if (r.hr !== null && r.hr >= 100) flags.push('心率快');
-            if (r.hr !== null && r.hr < 50) flags.push('心率慢');
+            if (r.hr !== null && r.hr >= 100) flags.push('心跳偏快');
+            if (r.hr !== null && r.hr < 50) flags.push('心跳偏慢');
             const pp = r.sys - r.dia;
-            if (pp >= 60) flags.push('脈壓大');
-            else if (pp > 0 && pp < 30) flags.push('脈壓小');
+            if (pp >= 60) flags.push('脈壓偏大');
+            else if (pp > 0 && pp < 30) flags.push('脈壓偏小');
             return flags;
         }
 
-        // 渲染主畫面「Mia 智能總結」卡片
+        // 渲染主畫面「 智能總結」卡片
         function renderSmartReading() {
             const card = document.getElementById('smartReadingCard');
             const content = document.getElementById('smartReadingContent');
@@ -4292,7 +4414,7 @@
             renderFeedbackStats();
             populateMonthFilter();
             updateComplianceStatus();
-            updateMiaQuest();
+            updateQuest();
             updateTrendAnalysis(representativeRecords);
             updateDoctorSummary(representativeRecords);
             renderChart(representativeRecords);
@@ -4305,7 +4427,7 @@
             const isMedicated = document.getElementById('medicatedCheck').checked;
             
             if (!/^\d+$/.test(rawInput)) {
-                return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '格式不對喔', text: 'Josh弟弟，請輸入純數字連打。' });
+                return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '格式不對', text: '請輸入純數字，中間不要空格。' });
             }
 
             const parsedData = parseBP(rawInput); 
@@ -4528,9 +4650,9 @@
             const next = nextStreakMilestone(streak);
             const daysSince = getDaysSinceLastMeasurement();
             const title = isAchieved
-                ? 'Josh弟弟，這週有在護心'
+                ? '這週有在量'
                 : (streak > 0
-                    ? `連續 ${streak} 天，差這一筆`
+                    ? `連續 ${streak} 天`
                     : (best > 0 ? '中斷沒關係，紀錄還在' : '從今天這一筆開始'));
             const note = daysSince !== null && daysSince >= 3 && streak === 0
                 ? `空白不用補。你最高連續過 ${best} 天，量一次就重新累積。`
@@ -4560,7 +4682,7 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed text-center px-1">${note}</p>
                     </div>
                 `, 
-                confirmButtonColor: '#e11d48', 
+                confirmButtonColor: '#0f5f58', 
                 confirmButtonText: streak === 0 || !getTodayQuest().hasMorning || !getTodayQuest().hasEvening ? '去量一筆' : '我知道了' 
             }).then((res) => {
                 if (res.isConfirmed) {
@@ -4626,13 +4748,13 @@
                 const diff = recentSys - baselineSys;
                 
                 if (diff <= -3) {
-                    summaryEl.innerHTML = `<i class="ph-fill ph-trend-down text-emerald-500 text-sm mr-1.5 mt-0.5"></i><div>Mia 分析：近期收縮壓較初始基線下降了 <span class="font-black text-emerald-600 dark:text-emerald-400">${Math.abs(diff)} mmHg</span>，長線趨勢控制得很棒喔！</div>`;
+                    summaryEl.innerHTML = `<i class="ph-fill ph-trend-down text-emerald-500 text-sm mr-1.5 mt-0.5"></i><div>最近的收縮壓比一開始低了 <span class="font-black text-emerald-600 dark:text-emerald-400">${Math.abs(diff)}</span>。方向是對的。</div>`;
                     summaryEl.className = 'text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-3 leading-relaxed bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 p-2.5 rounded-lg flex items-start';
                 } else if (diff >= 3) {
-                    summaryEl.innerHTML = `<i class="ph-fill ph-trend-up text-rose-500 text-sm mr-1.5 mt-0.5"></i><div>Mia 提醒：近期收縮壓較初始基線上升了 <span class="font-black text-rose-600 dark:text-rose-400">${diff} mmHg</span>，留意近期是否較為勞累或需控制飲食。</div>`;
+                    summaryEl.innerHTML = `<i class="ph-fill ph-trend-up text-rose-500 text-sm mr-1.5 mt-0.5"></i><div>最近的收縮壓比一開始高了 <span class="font-black text-rose-600 dark:text-rose-400">${diff}</span>。可以回想最近睡得如何、是不是比較累或吃得比較鹹。</div>`;
                     summaryEl.className = 'text-xs font-bold text-rose-800 dark:text-rose-300 mb-3 leading-relaxed bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 p-2.5 rounded-lg flex items-start';
                 } else {
-                    summaryEl.innerHTML = `<i class="ph-fill ph-minus text-indigo-500 text-sm mr-1.5 mt-0.5"></i><div>Mia 分析：長期趨勢維持平穩（變動 ${diff > 0 ? '+' : ''}${diff} mmHg），無顯著劇烈波動。</div>`;
+                    summaryEl.innerHTML = `<i class="ph-fill ph-minus text-indigo-500 text-sm mr-1.5 mt-0.5"></i><div>這段時間大致平穩（變動 ${diff > 0 ? '+' : ''}${diff}）。</div>`;
                     summaryEl.className = 'text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-3 leading-relaxed bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 p-2.5 rounded-lg flex items-start';
                 }
             }
@@ -5118,7 +5240,7 @@
 
         window.showMeasurementGuide = function() {
             Swal.fire({
-                ...getSwalConfig(), title: 'Mia 的測量小叮嚀 (722)',
+                ...getSwalConfig(), title: '怎麼量比較準',
                 html: `
                     <div class="text-left text-sm leading-relaxed space-y-3">
                         <p class="text-indigo-500 font-bold border-b pb-1">設備跟環境</p>
@@ -5172,8 +5294,8 @@
             badge.innerText = confidence.label;
             
             if (confidence.label.includes('低')) {
-                document.getElementById('morningAvgDisplay').innerText = morningRecords.length > 0 ? "累積中" : "還沒量喔";
-                document.getElementById('eveningAvgDisplay').innerText = eveningRecords.length > 0 ? "累積中" : "還沒量喔";
+                document.getElementById('morningAvgDisplay').innerText = morningRecords.length > 0 ? "累積中" : "這週早上還沒有";
+                document.getElementById('eveningAvgDisplay').innerText = eveningRecords.length > 0 ? "累積中" : "這週晚上還沒有";
                 const ppElL = document.getElementById('ppAvgDisplay'); if (ppElL) ppElL.innerText = '--';
                 const sdElL = document.getElementById('bpvSdDisplay'); if (sdElL) sdElL.innerText = '--';
                 const cntElL = document.getElementById('recordCountDisplay'); if (cntElL) cntElL.innerText = recent7Days.length;
@@ -5182,8 +5304,8 @@
                 box.className = 'rounded-xl p-3 border bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 transition-colors duration-300'; 
                 
                 document.getElementById('trendIcon').innerHTML = '<i class="ph-fill ph-info text-slate-400"></i>'; 
-                document.getElementById('trendTitle').innerText = 'Mia 的初步提醒 (資料累積中)'; 
-                document.getElementById('trendDesc').innerText = '因為資料筆數還不夠多，我先不進行深度的生理節律推論。請繼續保持每天早晚量測，讓我幫你累積更穩定的分析基線喔。'; 
+                document.getElementById('trendTitle').innerText = '資料還不夠'; 
+                document.getElementById('trendDesc').innerText = '早上和晚上的紀錄還太少，先不下結論。繼續每天早晚各量一次就好。'; 
                 document.getElementById('trendActions').innerHTML = ''; 
                 
                 container.classList.remove('hidden'); 
@@ -5302,24 +5424,24 @@
             // 心率附加建議
             let hrAdvice = '';
             if (avgHr !== null) {
-                if (avgHr > 90) hrAdvice = `<li><strong>靜息心率偏快（均值 ${avgHr} bpm）：</strong>靜息心率持續超過 90 bpm，交感神經可能過度活化。研究顯示靜息心率 >90 者心血管風險增加約 30%。建議減少咖啡因、酒精與高壓情境，必要時與醫師討論是否加入 β 阻斷劑。</li>`;
-                else if (avgHr < 60) hrAdvice = `<li><strong>靜息心率偏慢（均值 ${avgHr} bpm）：</strong>若為 β 阻斷劑或 CCB 藥物所致且無頭暈目眩，可暫觀察。若無服藥且有疲倦或喘氣症狀，請就醫評估心臟節律問題（如竇房結症候群）。</li>`;
+                if (avgHr > 90) hrAdvice = `<li>安靜時心跳平均 ${avgHr}，偏快。少一點咖啡和酒。如果常常這樣，回診時跟醫師說。</li>`;
+                else if (avgHr < 60) hrAdvice = `<li>安靜時心跳平均 ${avgHr}，偏慢。有在吃藥而且沒有頭暈，可以先觀察。沒吃藥又覺得累或喘，再去檢查。</li>`;
             }
 
             // 變異度附加警告
             let sdWarning = '';
             if (sd7 !== null && sd7 > 15) {
-                sdWarning = `<li><strong>血壓變異度偏高（SD = ${sd7} mmHg）：</strong>近 7 日收縮壓標準差超過 15 mmHg。ESH 2023 指引指出此屬高度變異，與大動脈僵硬、微血管損傷及中風風險上升顯著相關。建議減少情緒起伏、避免過度勞累，並與醫師討論是否調整用藥方案。</li>`;
+                sdWarning = `<li>這週血壓起伏比較大。盡量固定時間量，回診時也可以提一下。</li>`;
             } else if (sd7 !== null && sd7 > 10) {
-                sdWarning = `<li><strong>血壓變異度稍高（SD = ${sd7} mmHg）：</strong>近 7 日收縮壓標準差在 10–15 mmHg 之間，屬中度變異。建議維持規律作息、固定量測時間，減少影響血壓的外在因素。</li>`;
+                sdWarning = `<li>這週血壓有一點起伏。固定每天量的時間，會比較好比較。</li>`;
             }
 
             // 脈壓附加警告
             let ppWarning = '';
             if (avgPP !== null && avgPP >= 60) {
-                ppWarning = `<li><strong>脈壓偏寬（PP 均值 = ${avgPP} mmHg）：</strong>脈壓 ≥ 60 mmHg 反映大動脈彈性下降、血管僵硬度增加。Framingham 研究證實，脈壓每上升 10 mmHg，冠狀動脈事件風險增加 12–16%。建議定期評估動脈硬化相關指標（如 PWV 脈波傳導速度）。</li>`;
+                ppWarning = `<li>脈壓（上面那個數字減下面那個）平均 ${avgPP}，偏大，血管可能比較硬。回診時可以請醫師看一下。</li>`;
             } else if (avgPP !== null && avgPP >= 50) {
-                ppWarning = `<li><strong>脈壓偏高（PP 均值 = ${avgPP} mmHg）：</strong>脈壓 50–59 mmHg 屬輕度偏高範圍，提示動脈彈性輕度下降，宜注意低鈉飲食、減少飽和脂肪攝取，維持規律有氧運動。</li>`;
+                ppWarning = `<li>脈壓平均 ${avgPP}，稍微偏大。少吃太鹹的，多走路會有幫助。</li>`;
             }
 
             const box = document.getElementById('trendSuggestionBox');
@@ -5332,72 +5454,66 @@
                 'A': {
                     css: 'bg-orange-50 dark:bg-orange-900/10 text-orange-900 dark:text-orange-300 border-orange-200 dark:border-orange-800/50',
                     icon: 'ph-warning text-orange-500',
-                    title: 'Mia 發現警訊：晨間飆高 (Morning Surge)',
-                    desc: `Josh弟弟，你早晨均壓 (${avgMornSys}/${avgMornDia}) 比晚間 (${avgEveSys}/${avgEveDia}) 高出 ${diff} mmHg，符合「晨間飆高」模式。清晨 6–10 時交感神經急速活化、腎素-血管張力素系統 (RAAS) 分泌攀升、血小板聚集能力同步增強，三重機制共同作用，使此時段成為心肌梗塞與腦中風的最高峰時段（ESH 2023）。`,
-                    advice: `<li><strong>評估藥效覆蓋：</strong>若有服用降壓藥，晨間高峰可能代表藥效未能覆蓋整個 24 小時，在「谷值 (trough)」時段出現血壓回升。回診時請告知醫師此數字，評估是否換用長效製劑或分次給藥。</li>
-                             <li><strong>起床動作放慢：</strong>醒來後先在床上靜躺 30 秒，再緩慢坐起、靜待 1–2 分鐘後才站立。此舉可讓交感神經緩慢活化，有效降低晨間血壓急升幅度。</li>
-                             <li><strong>避免清晨強刺激：</strong>冷水澡、劇烈晨跑、緊張通勤等刺激會加劇血管收縮，建議推遲至早餐後血壓穩定再進行。</li>
-                             <li><strong>確保晨間量測準確性：</strong>每次在起床 1 小時內、排尿後、服藥前量測，才能精確捕捉真實晨間基線，為醫師提供最可靠的診斷依據。</li>`
+                    title: '早上的血壓比晚上高很多',
+                    desc: `早上平均 ${avgMornSys}/${avgMornDia}，晚上 ${avgEveSys}/${avgEveDia}，早上高出 ${diff}。很多人早上會比較高。如果常常這樣，回診時跟醫師說，看藥效有沒有蓋到早上。`,
+                    advice: `<li>醒來先躺半分鐘，再慢慢坐起來，坐一下才量。</li>
+                             <li>早上的量測放在起床後一小時內、上完廁所、吃藥之前。</li>
+                             <li>冷水澡和剛起床就劇烈運動，會讓早上的血壓更高。</li>`
                 },
                 'N': {
                     css: 'bg-sky-50 dark:bg-sky-900/10 text-sky-900 dark:text-sky-300 border-sky-200 dark:border-sky-800/50',
                     icon: 'ph-info text-sky-500',
-                    title: '資訊提示：血壓正常，夜間降壓率偏低（風險低）',
-                    desc: `Josh弟弟，早晚均壓 (${avgMornSys}/${avgMornDia} → ${avgEveSys}/${avgEveDia}) <strong>都在正常範圍</strong>。雖然平均降壓率 ${dipResult.avgPct}% 在技術定義上偏低，但 ESH 2023 明確指出：夜間降壓型態的臨床預測值主要建立於高血壓族群，對血壓正常者的絕對心血管風險很低，不需過度緊張。`,
-                    advice: `<li><strong>請持續維持目前的生活方式：</strong>規律作息、均衡飲食、適度運動是讓血壓穩定的核心。</li>
-                             <li><strong>追蹤即可，不需特殊處置：</strong>每天早晚量測累積資料即可，不需要為此項目額外就醫。</li>
-                             <li><strong>若未來血壓升高，再回頭看這個指標：</strong>當收縮壓開始 ≥130 時，此指標才會具有臨床意義。</li>`
+                    title: '血壓在正常範圍',
+                    desc: `早上 ${avgMornSys}/${avgMornDia}，晚上 ${avgEveSys}/${avgEveDia}，都還在正常範圍。晚上降得少一點，對目前的你風險不高，不用緊張。`,
+                    advice: `<li>維持現在的作息和飲食就好。</li>
+                             <li>繼續早晚各量一次。如果以後收縮壓常常到 130 以上，再把這個現象跟醫師說。</li>`
                 },
                 'R': {
                     css: 'bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-300 border-red-300 dark:border-red-800/50',
-                    icon: 'ph-skull text-red-600',
-                    title: 'Mia 緊急警示：反勺型 (Reverse Dipper)',
+                    icon: 'ph-warning-octagon text-red-600',
+                    title: '晚上的血壓沒有降下來，反而更高',
                     desc: dipResult.sufficient
-                        ? `Josh弟弟，近 ${dipResult.sampleSize} 天配對量測中，有 ${dipResult.counts.reverse} 天屬「反勺型」（夜間血壓不降反升），平均降壓率 <strong>${dipResult.avgPct}%</strong>（正常應為 +10–20%）。這是所有夜間血壓型態中**心血管風險最高**的一種：JAMA 2022 大型統合分析顯示，Reverse Dipper 中風與心衰竭風險較 Normal Dipper 增加 <strong>2.5–3 倍</strong>，且與隱匿性心衰、自律神經失調、嚴重 OSA、慢性腎病晚期高度相關。請務必於 1–2 週內回診評估，不可拖延。`
-                        : `近期早晚配對量測顯示夜間血壓反而高於早晨。此模式臨床稱為「反勺型」，是心血管風險最高的型態，請密切觀察並就醫評估。`,
-                    advice: `<li><strong>立即排查睡眠呼吸中止症 (OSA)：</strong>嚴重 OSA 是 Reverse Dipper 的最常見病因。請主動向醫師要求安排睡眠多項生理檢查 (PSG)，並評估是否需 CPAP 治療。</li>
-                             <li><strong>檢查腎功能與心臟結構：</strong>請就診時要求做血清肌酸酐 / eGFR、尿白蛋白、心臟超音波（評估左心室肥厚與舒張功能），這些是 Reverse Dipper 受損最早的標的器官。</li>
-                             <li><strong>檢視服藥時機：</strong>HYGIA 與 MAPEC 研究顯示，將至少一種降壓藥移至睡前服用對 Reverse Dipper 改善幅度最大。請與醫師討論是否調整給藥時間（切勿自行調整）。</li>
-                             <li><strong>嚴格限鹽：</strong>每日鈉攝取 &lt;2,000 mg（約 5 公克鹽），高鹽攝取會直接惡化夜間血壓控制。</li>`
+                        ? `近 ${dipResult.sampleSize} 天裡，有 ${dipResult.counts.reverse} 天晚上比早上高。一般來說晚上應該比早上低一些。這個情況請在一到兩週內回診。`
+                        : `最近晚上的血壓比早上高。請盡快回診，不要拖。`,
+                    advice: `<li>如果會打鼾、白天很想睡、早上頭痛，跟醫師說，問要不要做睡眠檢查。</li>
+                             <li>回診時可以請醫師看腎臟和心臟。</li>
+                             <li>藥什麼時候吃要醫師決定，不要自己改。</li>
+                             <li>少吃太鹹的，一天食鹽大約不要超過一茶匙。</li>`
                 },
                 'B': {
                     css: 'bg-rose-50 dark:bg-rose-900/20 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-800/50',
                     icon: 'ph-warning-octagon text-rose-500',
-                    title: 'Mia 嚴厲警告：夜間不降 (Non-Dipper)',
+                    title: '晚上的血壓幾乎沒有下降',
                     desc: dipResult.sufficient
-                        ? `Josh弟弟，近 ${dipResult.sampleSize} 天配對量測中，有 <strong>${dipResult.counts.non} 天（${Math.round(dipResult.counts.non / dipResult.sampleSize * 100)}%）</strong>屬「不降型 Non-Dipper」，平均降壓率僅 <strong>${dipResult.avgPct}%</strong>（正常應為 10–20%）。ESH 2023 指引明確指出此模式與左心室肥厚、蛋白尿、動脈僵硬等靶器官損傷高度相關；21 年長期追蹤研究顯示 Non-Dipper 心血管事件發生率高達 28%，遠高於正常 Dipper 的 6.6%。這是需要積極處理的訊號。`
-                        : `Josh弟弟，正常人夜間血壓應比白天下降 10–20%（「Dipper 型」）。你近期晚間均壓 (${avgEveSys}/${avgEveDia}) 未見明顯回落，屬「Non-Dipper 型」。ESH 2023 指引明確指出此模式與左心室肥厚、蛋白尿、動脈僵硬等靶器官損傷高度相關；21 年長期追蹤研究顯示 Non-Dipper 心血管事件發生率高達 28%，遠高於正常 Dipper 的 6.6%。這是需要積極處理的訊號。`,
-                    advice: `<li><strong>嚴格限鈉是首要關鍵：</strong>高鹽攝取導致血漿容量擴張、夜間腎臟排鈉負荷過重，是 Non-Dipper 最常見成因。即日起每日鈉攝取控制在 2,000 mg 以下（約 5 公克食鹽），嚴格減少醬油、醃製品、加工食品及外食。</li>
-                             <li><strong>排查睡眠呼吸中止症 (OSA)：</strong>夜間反覆缺氧持續激活交感神經，抑制血壓夜間回落。若有打鼾、白天嗜睡、晨起頭痛等症狀，請積極安排睡眠多項生理檢查 (PSG)。</li>
-                             <li><strong>監測腎功能：</strong>慢性腎病 (CKD) 會破壞夜間 BP 調節機制，且 Non-Dipper 與腎損傷形成惡性循環。建議定期檢測血清肌酸酐、eGFR 及晨尿 ACR（白蛋白/肌酸酐比值）。</li>
-                             <li><strong>時間療法 (Chronotherapy)：</strong>研究顯示將部分降壓藥移至睡前服用可有效改善 Non-Dipper 模式（HYGIA 研究）。請主動與醫師討論是否適合調整給藥時間，切勿自行更改劑量。</li>`
+                        ? `近 ${dipResult.sampleSize} 天裡，有 ${dipResult.counts.non} 天晚上沒有明顯下降。一般晚上會比早上低一截。請在回診時提起這件事。`
+                        : `晚上 ${avgEveSys}/${avgEveDia}，沒有比早上低多少。一般晚上會降下來一些。回診時跟醫師說。`,
+                    advice: `<li>少吃太鹹的，醬料、醃漬和湯麵最容易超量。</li>
+                             <li>會打鼾或白天很想睡的話，跟醫師說。</li>
+                             <li>藥能不能改到睡前吃，要問醫師，不要自己改。</li>`
                 },
                 'C': {
                     css: 'bg-blue-50 dark:bg-blue-900/10 text-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-800/50',
                     icon: 'ph-trend-down text-blue-500',
-                    title: currentAge < 65 ? 'Mia 解讀：極端夜降 (Extreme Dipper) — 年齡評估尚可' : 'Mia 發現警訊：極端夜降 (Extreme Dipper) — 缺血高危',
+                    title: currentAge < 65 ? '晚上血壓掉得比較多，以你的年齡還可以' : '晚上血壓掉太多，起床要留意',
                     desc: currentAge < 65
-                        ? `近 ${dipResult.sampleSize || 0} 天配對量測平均降壓率 <strong>${dipResult.avgPct ?? 0}%</strong>（超過 20% 門檻），屬「Extreme Dipper 型」。以你目前 ${currentAge} 歲的年齡模型評估，此種大幅夜間回落反映自律神經調節能力良好，臨床心血管風險相對尚可，但仍需持續監控。`
-                        : `近 ${dipResult.sampleSize || 0} 天配對量測平均降壓率 <strong>${dipResult.avgPct ?? 0}%</strong>（超過 20% 門檻），屬「Extreme Dipper 型」。AHA Hypertension 2020 研究顯示，65 歲以上患者此型心血管事件風險較 Normal Dipper 高出 2–4 倍，機制為夜間相對低血壓造成心腦灌流不足，對合併動脈狹窄者尤其危險。`,
+                        ? `晚上比早上低得比較多。以你現在 ${currentAge} 歲來說，多半還好。如果早上起床會暈，再去檢查。`
+                        : `晚上比早上低得比較多。65 歲以上如果掉太多，早上可能會暈。起床慢一點，不舒服就就醫。`,
                     advice: currentAge < 65
-                        ? `<li><strong>觀察起床症狀：</strong>只要早晨起床沒有頭暈目眩、視力短暫模糊或肢體無力，維持現有健康作息即可。這些症狀若出現，應立刻就醫。</li>
-                           <li><strong>避免睡前飲酒：</strong>酒精具血管擴張效應，會加劇夜間血壓過度下降。建議睡前 3 小時內不飲酒。</li>
-                           <li><strong>睡前補充水分：</strong>睡前適量補水（150–200 ml），預防夜間因脫水加劇低血壓效應。</li>`
-                        : `<li><strong>避免睡前服用強效降壓藥：</strong>長效 CCB 高劑量、ARB/ACEI 大劑量若於睡前服用，將大幅增加夜間無症狀心腦缺血風險。務必請醫師評估是否調整至白天服用。</li>
-                           <li><strong>警惕一過性缺血症狀：</strong>若出現晨起頭暈、短暫視力模糊、口齒不清或肢體無力等症狀，請立刻就醫進行腦灌流評估，不可輕忽。</li>
-                           <li><strong>睡前補充水分：</strong>確保睡前攝取足夠水分（200–250 ml），脫水會顯著加劇夜間低血壓風險。</li>
-                           <li><strong>嘗試抬高床頭：</strong>將床頭抬高約 10–15 度可輕度緩解夜間極端降壓效應，適合有頭暈症狀者嘗試。</li>`
+                        ? `<li>起床如果會暈、眼前發黑，就要就醫。</li>
+                           <li>睡前少喝酒。可以喝一小杯水。</li>`
+                        : `<li>睡前的藥會不會讓晚上壓得太低，請醫師評估，不要自己停藥。</li>
+                           <li>早上如果會暈、看不清楚、講話不順，立刻就醫。</li>
+                           <li>睡前喝一杯水。起床慢一點。</li>`
                 },
                 'D': {
                     css: 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50',
                     icon: 'ph-check-circle text-emerald-500',
-                    title: dipResult.sufficient ? 'Mia 的分析：健康的晝夜節律 (Normal Dipper)' : 'Mia 的初步觀察（資料尚不足以分類）',
+                    title: dipResult.sufficient ? '晚上的血壓有正常下降' : '早晚的資料還不夠',
                     desc: dipResult.sufficient
-                        ? `Josh弟弟，近 ${dipResult.sampleSize} 天配對量測平均降壓率 <strong>${dipResult.avgPct}%</strong>，落在 10–20% 的理想區間，屬「Normal Dipper 型」。研究顯示此模式的長期心血管事件風險最低，代表自律神經調節良好，心臟獲得充分的夜間修復時間。`
-                        : `早晨均壓 (${avgMornSys}/${avgMornDia})，晚間均壓 (${avgEveSys}/${avgEveDia})，早晚落差 ${Math.abs(diff)} mmHg。目前早晚配對天數還不足 5 天（需 ${dipResult.totalNeeded || 5} 天），尚無法做夜間降壓型態的正式分類，請持續每日早晚量測累積資料。`,
-                    advice: `<li><strong>持續規律量測：</strong>維持每天早晚固定時間量測，讓 Mia 持續追蹤長期趨勢，及早發現任何模式轉變。</li>
-                             <li><strong>守住睡眠節律：</strong>建議 23:00 前入睡、保持 7–8 小時睡眠，規律的睡眠是維持健康 Dipper 模式最重要的基礎，避免熬夜。</li>
-                             <li><strong>低鈉飲食守住成果：</strong>長期高鈉飲食是轉變為 Non-Dipper 的最主要風險因子，即使目前控制良好，每日鹽分攝取仍應維持在 5 公克以下。</li>`
+                        ? `近 ${dipResult.sampleSize} 天，晚上大致比早上低一截，這是比較理想的樣子。繼續保持就好。`
+                        : `早上平均 ${avgMornSys}/${avgMornDia}，晚上 ${avgEveSys}/${avgEveDia}。還需要大約 ${dipResult.totalNeeded || 5} 天早晚都有量，才能判斷晚上有沒有降下來。`,
+                    advice: `<li>繼續每天早晚各量一次。</li>
+                             <li>盡量固定時間睡，少吃太鹹的。</li>`
                 }
             };
 
@@ -5464,10 +5580,10 @@
                         </div>
                     `;
                 } else { 
-                    const emptyBorderStyle = (i === 0) ? 'border: 2px solid rgba(255,255,255,0.55)' : 'border: 1px dashed rgba(255,255,255,0.25)';
+                    const emptyBorderStyle = (i === 0) ? 'border: 2px solid #0f5f58' : 'border: 1px dashed #d6d3d1';
                     colWrapper.innerHTML += `
-                        <div class="bp-bar" style="background:rgba(255,255,255,0.1); height:32px; ${emptyBorderStyle}">
-                            <span style="color:rgba(255,255,255,0.35)">—</span>
+                        <div class="bp-bar" style="background:#f5f5f4; height:32px; ${emptyBorderStyle}">
+                            <span style="color:#a8a29e">—</span>
                         </div>
                     `; 
                 }
@@ -5484,20 +5600,18 @@
             }
 
             // 今日量測狀態
-            const todayStr = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
-            const todayRecs = bpRecords.filter(r => r.date === todayStr);
-            const hasMorning = todayRecs.some(r => r.timeSlot === '早');
-            const hasEvening = todayRecs.some(r => r.timeSlot === '晚');
+            const questToday = getTodayQuest();
+            const hasMorning = questToday.hasMorning;
+            const hasEvening = questToday.hasEvening;
             const todayStatusRow = document.getElementById('todayStatusRow');
             if (todayStatusRow) {
+                const chip = (done, label) => `<span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${done ? 'bg-emerald-50 text-emerald-700' : 'bg-stone-100 text-stone-400'}">
+                        <i class="ph-fill ${done ? 'ph-check-circle' : 'ph-circle'} text-xs"></i>${label}
+                    </span>`;
                 todayStatusRow.innerHTML = `
-                    <span class="text-[10px] font-black text-white/60 uppercase tracking-wider mr-1">今日</span>
-                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hasMorning ? 'bg-white/25 text-white' : 'bg-white/10 text-white/40'}">
-                        <i class="ph-fill ${hasMorning ? 'ph-check-circle' : 'ph-circle'} text-xs"></i>早
-                    </span>
-                    <span class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hasEvening ? 'bg-white/25 text-white' : 'bg-white/10 text-white/40'}">
-                        <i class="ph-fill ${hasEvening ? 'ph-check-circle' : 'ph-circle'} text-xs"></i>晚
-                    </span>
+                    <span class="text-[10px] font-bold text-stone-400 mr-1">今天</span>
+                    ${chip(hasMorning, '早上')}
+                    ${chip(hasEvening, '晚上')}
                 `;
             }
 
@@ -5506,9 +5620,9 @@
                 const streakNow = calculateCurrentStreak();
                 const bestNow = calculateBestStreak();
                 legend.innerHTML = `
-                    <span class="text-[10px] font-bold text-white/80 flex items-center gap-1"><i class="ph-fill ph-flame text-amber-200"></i>連續 ${streakNow} 天</span>
-                    <span class="text-[10px] font-bold text-white/60">最佳 ${bestNow} 天</span>
-                    <span class="ml-auto text-[10px] font-bold text-white/50">${activeDays}/7 日有量</span>
+                    <span class="text-[10px] font-bold text-stone-500">連續 ${streakNow} 天</span>
+                    <span class="text-[10px] font-bold text-stone-400">最佳 ${bestNow} 天</span>
+                    <span class="ml-auto text-[10px] font-bold text-stone-400">${activeDays}/7 日有量</span>
                 `;
             }
         }
@@ -5873,19 +5987,9 @@
         // [系統小工具與 I/O 操作]
         // =========================================
         function applyRandomGradient() {
-            const gradients = [
-                'glass-streak-indigo',
-                'glass-streak-blue',
-                'glass-streak-fuchsia',
-                'glass-streak-slate',
-                'glass-streak-rose',
-                'glass-streak-teal'
-            ];
-            const selectedGradient = gradients[Math.floor(Math.random() * gradients.length)];
-
             const streakCard = document.getElementById('streakCard');
-            const baseClasses = "relative overflow-hidden rounded-2xl p-4 text-white hide-in-doctor-mode transition-all duration-300 cursor-pointer active:opacity-90 ";
-            streakCard.className = baseClasses + selectedGradient;
+            if (!streakCard) return;
+            streakCard.className = "relative overflow-hidden rounded-2xl p-4 text-stone-700 hide-in-doctor-mode bg-white border border-stone-200 cursor-pointer";
         }
 
         function checkBackupStatus() {
@@ -6046,7 +6150,7 @@
                 }
             }
 
-            md += `\n---\n_由「護心行動 x Mia」匯出_\n`;
+            md += `\n---\n_由「護心行動」匯出_\n`;
 
             // 下載
             const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
@@ -6173,7 +6277,7 @@
             const ttrPercentage = Math.round((targetCount / recent30DaysRecords.length) * 100);
             const medCount = recent30DaysRecords.filter(r => r.medicated).length;
 
-            const textToCopy = `【Mia 護心行動 - 門診摘要】\n區間：近 30 日 (${recent30DaysRecords.length}筆)\n總平均：${overallAvgSys} / ${overallAvgDia} (HR: ${overallAvgHr})\n早晨均壓：${avgMornSys} / ${avgMornDia} | 晚間均壓：${avgEveSys} / ${avgEveDia}\n達標率 (<130/80)：${ttrPercentage}%\n最高收縮壓：${Math.max(...sysArray)} | 最低收縮壓：${Math.min(...sysArray)}\n服藥紀錄：${medCount}筆`;
+            const textToCopy = `【護心行動 - 門診摘要】\n區間：近 30 日 (${recent30DaysRecords.length}筆)\n總平均：${overallAvgSys} / ${overallAvgDia} (HR: ${overallAvgHr})\n早晨均壓：${avgMornSys} / ${avgMornDia} | 晚間均壓：${avgEveSys} / ${avgEveDia}\n達標率 (<130/80)：${ttrPercentage}%\n最高收縮壓：${Math.max(...sysArray)} | 最低收縮壓：${Math.min(...sysArray)}\n服藥紀錄：${medCount}筆`;
             
             const textArea = document.createElement("textarea"); 
             textArea.value = textToCopy; 
@@ -6206,7 +6310,7 @@
                 { name: 'apple-mobile-web-app-capable', content: 'yes' }, 
                 { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }, 
                 { name: 'apple-mobile-web-app-title', content: '護心行動' }, 
-                { name: 'theme-color', content: '#0f172a' } 
+                { name: 'theme-color', content: '#0f5f58' } 
             ]; 
             metaTags.forEach(tag => { 
                 const meta = document.createElement('meta'); 
@@ -6216,56 +6320,127 @@
             }); 
         }
         
-        function downloadReminderICS() {
-            const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Josh BP Tracker//TW\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:☀️ Mia 提醒：早晨血壓量測\nDTSTART:20240101T080000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:☀️ Mia 提醒：早晨血壓量測\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nBEGIN:VEVENT\nSUMMARY:🌙 Mia 提醒：睡前血壓量測\nDTSTART:20240101T200000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:🌙 Mia 提醒：睡前血壓量測\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
-            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'Mia_護心行動_每日提醒.ics';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '鬧鐘檔案做好了', text: '點擊下載的檔案匯入手機行事曆，每天會準時提醒量血壓。' });
+        const APP_URL = 'https://josh2188.github.io/bloodpressure/';
+
+        function deviceDocId() {
+            let id = localStorage.getItem('bpDeviceId');
+            if (!id) {
+                id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
+                localStorage.setItem('bpDeviceId', id);
+            }
+            return id;
         }
 
-        async function enableBrowserNotification() {
-            if (!('Notification' in window)) {
-                return Swal.fire({ ...getSwalConfig(), icon: 'error', title: '不支援', text: '此裝置或瀏覽器不支援通知。建議改用行事曆檔案。' });
+        function isStandaloneApp() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+
+        async function savePushDevice(token, enabled) {
+            const user = fbAuth && fbAuth.currentUser;
+            if (!user || !fbDb) return;
+            await fbDb.collection('users').doc(user.uid).collection('devices').doc(deviceDocId()).set({
+                token: token || null,
+                enabled: !!enabled,
+                updatedAt: Date.now(),
+                platform: (navigator.userAgent || '').slice(0, 180)
+            }, { merge: true });
+        }
+
+        async function enableCloudReminder() {
+            const isiOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+            if (!fbAuth || !fbAuth.currentUser) {
+                return Swal.fire({ ...getSwalConfig(), icon: 'info', title: '請先登入', text: '提醒要對到你的雲端紀錄，才知道這個時段量了沒有。' });
+            }
+            if (isiOS && !isStandaloneApp()) {
+                return Swal.fire({
+                    ...getSwalConfig(),
+                    icon: 'info',
+                    title: '先加到主畫面',
+                    html: '<div class="text-sm text-left leading-relaxed">iPhone 只有從主畫面打開，關著畫面才收得到提醒。<br><br>用 Safari 打開這個網頁，按分享，選「加入主畫面」。之後用那個圖示進來，再打開提醒。</div>'
+                });
+            }
+            if (!('Notification' in window) || !('serviceWorker' in navigator) || !firebase.messaging) {
+                return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '這台裝置收不到推播', text: '可以改下載行事曆。行事曆每天都會響，不會先看你量了沒有。' });
+            }
+            if (!FIREBASE_VAPID_KEY) {
+                return Swal.fire({
+                    ...getSwalConfig(),
+                    icon: 'info',
+                    title: '還差推播金鑰',
+                    html: '<div class="text-sm text-left leading-relaxed">提醒的時間和「沒量才響」已經寫好。手機現在還收不到，是因為 Firebase 的 Web Push 金鑰還沒填進網頁。<br><br>到 Firebase 主控台 → 專案設定 → Cloud Messaging → Web Push 憑證，產生金鑰後把那一串貼給我。</div>'
+                });
             }
             let perm = Notification.permission;
             if (perm === 'default') perm = await Notification.requestPermission();
             if (perm !== 'granted') {
-                return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '通知未開啟', text: '請至瀏覽器或系統設定開啟通知權限。' });
+                return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '沒有開啟通知', text: '請到系統設定允許這個 App 的通知。' });
             }
-            localStorage.setItem('notifEnabled', '1');
-            scheduleNextNotification();
-            Swal.fire({ ...getSwalConfig(), icon: 'success', title: '通知已開啟', text: '每日 07:00 與 21:00 會提醒量測（需保持 App 在背景開啟）。', timer: 2200, showConfirmButton: false });
+            try {
+                const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+                const messaging = firebase.messaging();
+                const token = await messaging.getToken({ vapidKey: FIREBASE_VAPID_KEY, serviceWorkerRegistration: reg });
+                if (!token) throw new Error('no token');
+                localStorage.setItem('bpPushToken', token);
+                await savePushDevice(token, true);
+                localStorage.setItem('notifEnabled', '1');
+                localStorage.setItem('pushMode', 'cloud');
+                if (notifTimerId) { clearTimeout(notifTimerId); notifTimerId = null; }
+                Swal.fire({
+                    ...getSwalConfig(),
+                    icon: 'success',
+                    title: '提醒已打開',
+                    text: '每天 7:20 和 21:20，那個時段還沒量才會響。已經量過就不會吵你。',
+                    timer: 2600,
+                    showConfirmButton: false
+                });
+            } catch (err) {
+                console.error('[提醒] 設定失敗', err);
+                Swal.fire({ ...getSwalConfig(), icon: 'error', title: '提醒沒設成功', text: '請確認已登入，以及網頁是用主畫面開啟。若還是失敗，把這則訊息留著再試一次。' });
+            }
         }
 
-        function disableBrowserNotification() {
+        async function disableCloudReminder() {
             localStorage.setItem('notifEnabled', '0');
+            localStorage.removeItem('pushMode');
             if (notifTimerId) { clearTimeout(notifTimerId); notifTimerId = null; }
-            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '通知已關閉', timer: 1400, showConfirmButton: false });
+            try {
+                const token = localStorage.getItem('bpPushToken');
+                await savePushDevice(token, false);
+            } catch (e) {}
+            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '提醒已關閉', timer: 1400, showConfirmButton: false });
+        }
+
+        function downloadReminderICS() {
+            const icsData = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//護心行動//TW\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:早上量血壓\nDTSTART:20240101T072000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:早上量血壓\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nBEGIN:VEVENT\nSUMMARY:晚上量血壓\nDTSTART:20240101T212000\nRRULE:FREQ=DAILY\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:晚上量血壓\nTRIGGER:-PT0M\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
+            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = '護心行動_每日提醒.ics';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            Swal.fire({ ...getSwalConfig(), icon: 'info', title: '行事曆檔案做好了', text: '匯入手機行事曆後，每天 7:20 和 21:20 都會響。它不會先看你量了沒有。' });
         }
 
         window.setupReminders = function() {
-            const notifOn = localStorage.getItem('notifEnabled') === '1' && ('Notification' in window) && Notification.permission === 'granted';
+            const cloudOn = localStorage.getItem('pushMode') === 'cloud' && localStorage.getItem('notifEnabled') === '1';
             Swal.fire({
                 ...getSwalConfig(),
-                title: '設定每日提醒',
+                title: '量血壓提醒',
                 html: `
                     <div class="flex flex-col gap-3 mt-2 text-left">
-                        <button id="btnNotifToggle" class="w-full px-4 py-3 rounded-xl border-2 ${notifOn ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900'} flex items-start gap-3 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                            <i class="ph-fill ph-bell-ringing text-2xl ${notifOn ? 'text-emerald-500' : 'text-indigo-500'} mt-0.5"></i>
+                        <p class="text-xs text-slate-500 leading-relaxed">早上 7:20、晚上 9:20。那個時段已經量過就不會響。連著兩天沒量，會直接說你已經幾天沒量了。</p>
+                        <button id="btnCloudPush" class="w-full px-4 py-3 rounded-xl border ${cloudOn ? 'border-teal-700 bg-teal-50' : 'border-stone-200 bg-stone-50'} flex items-start gap-3 text-left">
+                            <i class="ph-fill ph-bell-ringing text-2xl text-teal-800 mt-0.5"></i>
                             <div class="flex-1">
-                                <div class="text-sm font-bold flex items-center gap-2">瀏覽器通知 ${notifOn ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-white">已開啟</span>' : ''}</div>
-                                <div class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">07:00 與 21:00 自動推播。Android PWA 體驗最佳，需保留 App 在背景。</div>
+                                <div class="text-sm font-bold">沒量才提醒 ${cloudOn ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-800 text-white">已開啟</span>' : ''}</div>
+                                <div class="text-[11px] text-slate-500 leading-relaxed mt-0.5">關著 App 也收得到。iPhone 要先加入主畫面。</div>
                             </div>
                         </button>
-                        <button id="btnIcs" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-start gap-3 text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                            <i class="ph-fill ph-calendar-plus text-2xl text-rose-500 mt-0.5"></i>
+                        <button id="btnIcs" class="w-full px-4 py-3 rounded-xl border border-stone-200 bg-white flex items-start gap-3 text-left">
+                            <i class="ph-fill ph-calendar-plus text-2xl text-stone-500 mt-0.5"></i>
                             <div class="flex-1">
-                                <div class="text-sm font-bold">行事曆檔案 (.ics)</div>
-                                <div class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">下載後匯入手機行事曆，最穩定，iOS/Android 通用。</div>
+                                <div class="text-sm font-bold">行事曆</div>
+                                <div class="text-[11px] text-slate-500 leading-relaxed mt-0.5">每天固定響，最穩，但不會知道你已經量過。</div>
                             </div>
                         </button>
                     </div>
@@ -6273,10 +6448,10 @@
                 showConfirmButton: false,
                 showCloseButton: true,
                 didOpen: () => {
-                    document.getElementById('btnNotifToggle').addEventListener('click', () => {
+                    document.getElementById('btnCloudPush').addEventListener('click', () => {
                         Swal.close();
-                        if (notifOn) disableBrowserNotification();
-                        else enableBrowserNotification();
+                        if (cloudOn) disableCloudReminder();
+                        else enableCloudReminder();
                     });
                     document.getElementById('btnIcs').addEventListener('click', () => {
                         Swal.close();

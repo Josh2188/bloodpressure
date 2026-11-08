@@ -1,0 +1,13 @@
+{
+  "name": "護心行動",
+  "short_name": "護心",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#0f5f58",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
+  ]
+}
