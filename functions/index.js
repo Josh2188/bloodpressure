@@ -1,11 +1,14 @@
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
-const { getMessaging } = require("firebase-admin/messaging");
+const webpush = require("web-push");
 
 initializeApp();
 
 const APP_URL = "https://josh2188.github.io/bloodpressure/";
+const VAPID_PUBLIC_KEY = "BIO-kgwbYY9nAWOxJ6SuIPeOk4mhbxgBLogES2OPK4yL1eaB8MPPmBYJeeAWjR1ORFUkVKcNCsho63qvsO0wM7U";
+const vapidPrivateKey = defineSecret("VAPID_PRIVATE_KEY");
 
 function taipeiParts(date = new Date()) {
   const bag = {};
@@ -56,18 +59,19 @@ exports.bpReminder = onSchedule({
   schedule: "20 7,21 * * *",
   timeZone: "Asia/Taipei",
   region: "asia-east1",
+  secrets: [vapidPrivateKey],
 }, async () => {
+  webpush.setVapidDetails(APP_URL, VAPID_PUBLIC_KEY, vapidPrivateKey.value());
   const db = getFirestore();
   const hour = taipeiParts().hour;
   const slot = hour < 15 ? "早" : "晚";
   const today = logicalDateString();
   const devices = await db.collectionGroup("devices").get();
-  const messaging = getMessaging();
 
   for (const device of devices.docs) {
     if (device.get("enabled") === false) continue;
-    const token = device.get("token");
-    if (!token) continue;
+    const subscription = device.get("subscription");
+    if (!subscription || !subscription.endpoint || !subscription.keys) continue;
     const userRef = device.ref.parent.parent;
     if (!userRef) continue;
 
@@ -84,22 +88,17 @@ exports.bpReminder = onSchedule({
 
     const gap = latestDate ? daysBetween(latestDate, today) : null;
     try {
-      await messaging.send({
-        token,
-        notification: {
-          title: "護心行動",
-          body: reminderBody(slot, gap),
-        },
-        webpush: {
-          fcmOptions: { link: APP_URL },
-        },
-      });
+      await webpush.sendNotification(subscription, JSON.stringify({
+        title: "護心行動",
+        body: reminderBody(slot, gap),
+        url: APP_URL,
+      }));
     } catch (err) {
-      const code = err && (err.code || err.errorInfo?.code);
-      if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+      const status = err && err.statusCode;
+      if (status === 404 || status === 410) {
         await device.ref.set({ enabled: false, updatedAt: Date.now() }, { merge: true });
       } else {
-        console.error("[提醒] 送出失敗", device.id, code || err);
+        console.error("[提醒] 送出失敗", device.id, status || err);
       }
     }
   }

@@ -18,7 +18,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 
     <!-- Tailwind 設定 -->
     <script>
@@ -1510,29 +1509,11 @@
         let bpFeedbackOptionsUpdatedAt = 0;
         const BP_FEEDBACK_OTHER_LABEL = '其他：';
         const BP_FEEDBACK_PRESET_OPTIONS = [
-            '吃太重鹹',
-            '吃過量',
-            '水量攝取不足',
-            '水量補充足夠',
-            '吃很清淡',
-            '執行 168',
-            '睡眠不足（低於 4 小時）',
-            '睡眠不足（5-6小時)',
-            '睡眠不足（6-7小時)',
-            '睡眠充足（7 小時以上）',
-            '睡眠充足（9 小時以上）',
-            '運動 30 分鐘以上',
-            '運動 60 分鐘以上',
-            '外出高溫曝曬',
-            '熬夜（超過1點睡覺）',
-            '熬夜（超過2點睡覺）',
-            '熬夜（超過3點睡覺）',
-            '晚上 11 點前就寢',
-            '晚上 12 點前就寢',
-            '體感溫度上升',
-            '體感温度下降',
-            '身體不適（如頭暈、感冒、過敏等）',
-            BP_FEEDBACK_OTHER_LABEL
+            '吃太鹹',
+            '睡不好',
+            '熬夜',
+            '有運動',
+            '身體不適'
         ];
 
         // =========================================
@@ -1548,12 +1529,13 @@
             appId: "1:283887828179:web:e6495cbd11795422ca2826"
         };
         // Firebase 主控台 → 專案設定 → Cloud Messaging → Web Push 憑證。空字串時無法向關著的 App 推播。
-        const FIREBASE_VAPID_KEY = "";
+        const FIREBASE_VAPID_KEY = "BIO-kgwbYY9nAWOxJ6SuIPeOk4mhbxgBLogES2OPK4yL1eaB8MPPmBYJeeAWjR1ORFUkVKcNCsho63qvsO0wM7U";
 
         let fbAuth = null;          // Firebase Auth 實例
         let fbDb = null;            // Firestore 實例
         let recordsCol = null;      // 登入後指向 users/{uid}/records
         let cloudUnsub = null;      // onSnapshot 取消訂閱函式
+        let cloudInSyncUnsub = null;
         let suppressPush = false;   // 套用遠端變更時避免回推的旗標
         let weightsCol = null;      // 登入後指向 users/{uid}/weights
         let weightUnsub = null;     // 體重 onSnapshot 取消訂閱
@@ -2187,8 +2169,7 @@
         function getFeedbackOptionCatalog(extraReasons = []) {
             return dedupeStrings([
                 ...BP_FEEDBACK_PRESET_OPTIONS,
-                ...normalizeCustomFeedbackOptions(bpFeedbackCustomOptions),
-                ...normalizeCustomFeedbackOptions(extraReasons)
+                ...normalizeFeedbackReasons(extraReasons).filter((reason) => !isPresetFeedbackReason(reason))
             ]);
         }
 
@@ -2477,19 +2458,36 @@
             start() {
                 if (!recordsCol) return;
                 if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+                if (cloudInSyncUnsub) { cloudInSyncUnsub(); cloudInSyncUnsub = null; }
                 this.setStatus('syncing');
-                cloudUnsub = recordsCol.onSnapshot((snap) => {
+                if (!window.__bpNetBound) {
+                    window.__bpNetBound = true;
+                    window.addEventListener('offline', () => {
+                        if (fbAuth && fbAuth.currentUser) cloudSync.setStatus('offline');
+                    });
+                    window.addEventListener('online', () => {
+                        if (fbAuth && fbAuth.currentUser) cloudSync.setStatus('syncing');
+                    });
+                }
+                // 快取那一筆也會進來。登入而且瀏覽器有網路時，不能把它顯示成離線。
+                cloudUnsub = recordsCol.onSnapshot({ includeMetadataChanges: true }, (snap) => {
                     const remoteDocs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
                     applyRemoteChanges(remoteDocs);
-                    this.setStatus(snap.metadata.fromCache ? 'offline' : 'synced');
+                    if (navigator.onLine === false) this.setStatus('offline');
+                    else if (snap.metadata.hasPendingWrites || snap.metadata.fromCache) this.setStatus('syncing');
+                    else this.setStatus('synced');
                 }, (err) => {
                     console.error('[雲端同步] onSnapshot 錯誤', err);
                     this.setStatus('error');
+                });
+                cloudInSyncUnsub = fbDb.onSnapshotsInSync(() => {
+                    if (navigator.onLine !== false) this.setStatus('synced');
                 });
             },
 
             stop() {
                 if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+                if (cloudInSyncUnsub) { cloudInSyncUnsub(); cloudInSyncUnsub = null; }
             }
         };
 
@@ -3346,7 +3344,7 @@
                         <div class="hidden mt-2" data-feedback-other-wrap>
                             <input type="text" data-feedback-other-input class="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 text-sm text-slate-700 dark:text-slate-200 outline-none focus:border-rose-400" placeholder="請輸入其他理由">
                         </div>
-                        <div class="mt-2 text-[10px] ${required ? 'text-rose-500 dark:text-rose-300' : 'text-slate-400'}">${helperText || (required ? '至少選 1 項；若選「其他：」，一定要輸入理由。' : '可編輯這筆紀錄的回饋；若選「其他：」，一定要輸入理由。')}</div>
+                        <div class="mt-2 text-[10px] ${required ? 'text-rose-500 dark:text-rose-300' : 'text-slate-400'}">${helperText || (required ? '至少選 1 項。' : '可複選。')}</div>
                     </div>
                 </div>
             `;
@@ -3457,7 +3455,7 @@
                         selectorId,
                         selectedReasons,
                         required: false,
-                        helperText: '可選填；不想填請按「略過」。若選「其他：」，一定要輸入理由。'
+                        helperText: '可複選，不想填請按「略過」。'
                     })}
                 `,
                 showCancelButton: true,
@@ -3491,7 +3489,7 @@
                             selectorId,
                             selectedReasons: record.feedbackReasons,
                             required: false,
-                            helperText: '可選填；不想填請按「略過」。若選「其他：」，一定要輸入理由。'
+                            helperText: '可複選，不想填請按「略過」。'
                         })}
                     </div>`,
                     showCancelButton: true,
@@ -3572,7 +3570,7 @@
                         selectorId,
                         selectedReasons: record.feedbackReasons,
                         required: false,
-                        helperText: '可選填；不想填請按「略過」。若選「其他：」，一定要輸入理由。'
+                        helperText: '可複選，不想填請按「略過」。'
                     })}
                 </div>`,
                 showCancelButton: true,
@@ -6335,11 +6333,20 @@
             return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         }
 
-        async function savePushDevice(token, enabled) {
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const raw = atob(base64);
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        }
+
+        async function savePushDevice(subscription, enabled) {
             const user = fbAuth && fbAuth.currentUser;
             if (!user || !fbDb) return;
             await fbDb.collection('users').doc(user.uid).collection('devices').doc(deviceDocId()).set({
-                token: token || null,
+                subscription: subscription || null,
                 enabled: !!enabled,
                 updatedAt: Date.now(),
                 platform: (navigator.userAgent || '').slice(0, 180)
@@ -6359,7 +6366,7 @@
                     html: '<div class="text-sm text-left leading-relaxed">iPhone 只有從主畫面打開，關著畫面才收得到提醒。<br><br>用 Safari 打開這個網頁，按分享，選「加入主畫面」。之後用那個圖示進來，再打開提醒。</div>'
                 });
             }
-            if (!('Notification' in window) || !('serviceWorker' in navigator) || !firebase.messaging) {
+            if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
                 return Swal.fire({ ...getSwalConfig(), icon: 'warning', title: '這台裝置收不到推播', text: '可以改下載行事曆。行事曆每天都會響，不會先看你量了沒有。' });
             }
             if (!FIREBASE_VAPID_KEY) {
@@ -6377,11 +6384,15 @@
             }
             try {
                 const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-                const messaging = firebase.messaging();
-                const token = await messaging.getToken({ vapidKey: FIREBASE_VAPID_KEY, serviceWorkerRegistration: reg });
-                if (!token) throw new Error('no token');
-                localStorage.setItem('bpPushToken', token);
-                await savePushDevice(token, true);
+                const existing = await reg.pushManager.getSubscription();
+                const sub = existing || await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(FIREBASE_VAPID_KEY)
+                });
+                const json = sub.toJSON();
+                if (!json.endpoint || !json.keys) throw new Error('no subscription');
+                localStorage.setItem('bpPushSub', JSON.stringify({ endpoint: json.endpoint, keys: json.keys }));
+                await savePushDevice({ endpoint: json.endpoint, keys: json.keys }, true);
                 localStorage.setItem('notifEnabled', '1');
                 localStorage.setItem('pushMode', 'cloud');
                 if (notifTimerId) { clearTimeout(notifTimerId); notifTimerId = null; }
@@ -6404,8 +6415,11 @@
             localStorage.removeItem('pushMode');
             if (notifTimerId) { clearTimeout(notifTimerId); notifTimerId = null; }
             try {
-                const token = localStorage.getItem('bpPushToken');
-                await savePushDevice(token, false);
+                const reg = await navigator.serviceWorker.getRegistration('./firebase-messaging-sw.js');
+                const sub = reg && await reg.pushManager.getSubscription();
+                if (sub) await sub.unsubscribe();
+                localStorage.removeItem('bpPushSub');
+                await savePushDevice(null, false);
             } catch (e) {}
             Swal.fire({ ...getSwalConfig(), icon: 'info', title: '提醒已關閉', timer: 1400, showConfirmButton: false });
         }
