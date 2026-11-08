@@ -3901,9 +3901,21 @@
                 };
             }
 
+            // 晚上已經有了、早上沒有。不能跟著時鐘把缺的那筆說成晚上。
+            if (quest.hasEvening && !quest.hasMorning) {
+                return {
+                    tone: 'morning',
+                    title: '早上那一筆還沒記',
+                    body: '晚上已經記好了。早上漏了不用補。',
+                    cta: null,
+                    sticky: null
+                };
+            }
+
+            const missingSlot = !quest.hasMorning ? '早上' : '晚上';
             return {
                 tone: 'nudge',
-                title: quest.currentSlot === '早' ? '早上這一筆還沒記' : '晚上這一筆還沒記',
+                title: `${missingSlot}這一筆還沒記`,
                 body: '現在量的這一筆就好。',
                 cta: '現在就量',
                 sticky: '還差一筆'
@@ -3987,14 +3999,14 @@
             }
 
             if (slotsEl) {
-                const mark = (done, label, isNow) => {
-                    const cls = done ? 'is-done' : (isNow ? 'is-now' : '');
-                    const icon = done ? 'ph-check-circle' : (isNow ? 'ph-circle-dashed' : 'ph-circle');
-                    return `<div class="mia-slot-chip ${cls}"><i class="ph-fill ${icon}"></i>${label}${done ? ' 完成' : (isNow ? ' 現在' : '')}</div>`;
+                const mark = (done, label) => {
+                    const cls = done ? 'is-done' : 'is-now';
+                    const icon = done ? 'ph-check-circle' : 'ph-circle-dashed';
+                    return `<div class="mia-slot-chip ${cls}"><i class="ph-fill ${icon}"></i>${label}${done ? ' 完成' : ' 還沒'}</div>`;
                 };
                 slotsEl.innerHTML =
-                    mark(quest.hasMorning, '早晨', !quest.hasMorning && quest.currentSlot === '早') +
-                    mark(quest.hasEvening, '睡前', !quest.hasEvening && quest.currentSlot === '晚');
+                    mark(quest.hasMorning, '早晨') +
+                    mark(quest.hasEvening, '睡前');
             }
 
             if (ctaEl) {
