@@ -69,6 +69,9 @@
         }
         body.doctor-mode #doctorSheet td.num,
         body.doctor-mode #doctorSheet th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        body.doctor-mode #doctorSheet td.alert-1 { color: #a16207; font-weight: 700; }
+        body.doctor-mode #doctorSheet td.alert-2 { color: #c2410c; font-weight: 700; }
+        body.doctor-mode #doctorSheet td.alert-3 { color: #b91c1c; font-weight: 700; }
         .doctor-mode-header { display: none !important; }
         .doctor-mode-show { display: none !important; }
         
@@ -2985,16 +2988,16 @@
             // RPP 分級
             if (avgRpp >= 15000) {
                 rppGrade = '負擔大'; color = 'text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-300';
-                note = `心臟負擔 ${avgRpp}（血壓乘心跳），明顯偏高。請盡快回診。`;
+                note = `近 7 天，收縮壓乘心跳的平均是 ${avgRpp}。一萬五以上負擔偏大，回診時跟醫師說。`;
             } else if (avgRpp >= 12000) {
                 rppGrade = '偏高'; color = 'text-rose-600 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300';
-                note = `心臟負擔 ${avgRpp}，偏高。少一點咖啡，壓力大的日子也留意一下。`;
+                note = `近 7 天，收縮壓乘心跳的平均是 ${avgRpp}。一萬二以上偏高。`;
             } else if (avgRpp >= 10000) {
                 rppGrade = '稍高'; color = 'text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300';
-                note = `心臟負擔 ${avgRpp}，比理想稍高。多走一走，安靜時的心跳通常會慢下來。`;
+                note = `近 7 天，收縮壓乘心跳的平均是 ${avgRpp}。比一萬稍高一點。`;
             } else {
                 rppGrade = '還好'; color = 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300';
-                note = `心臟負擔 ${avgRpp}，在輕鬆的範圍。`;
+                note = `近 7 天，收縮壓乘心跳的平均是 ${avgRpp}。這不是血壓，一萬以下算輕鬆。`;
             }
             let hrExtra = '';
             if (avgHr > 90) hrExtra = ` 安靜時心跳 ${avgHr}，偏快。`;
@@ -5398,7 +5401,7 @@
             const hrGradeEl = document.getElementById('hrGrade');
             const hrNoteEl = document.getElementById('hrNote');
             if (hrRes.hasData) {
-                if (hrValEl) hrValEl.innerHTML = `${hrRes.avgHr} <span class="text-[10px] font-normal text-slate-400">bpm</span> · RPP <span class="text-sm">${hrRes.avgRpp}</span>`;
+                if (hrValEl) hrValEl.textContent = `${hrRes.avgHr} 次`;
                 if (hrGradeEl) { hrGradeEl.className = `text-[9px] font-black px-1.5 py-0.5 rounded ${hrRes.color}`; hrGradeEl.textContent = hrRes.rppGrade; }
                 if (hrNoteEl) hrNoteEl.textContent = hrRes.note;
             } else {
@@ -5754,13 +5757,29 @@
             rows.forEach((record) => {
                 const tr = document.createElement('tr');
                 const time = new Date(record.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const alertClass = (kind) => {
+                    let level = 0;
+                    if (kind === 'sys') {
+                        if (record.sys >= 160) level = 3;
+                        else if (record.sys >= 140) level = 2;
+                        else if (record.sys >= 130) level = 1;
+                    } else if (kind === 'dia') {
+                        if (record.dia >= 100) level = 3;
+                        else if (record.dia >= 90) level = 2;
+                        else if (record.dia >= 80) level = 1;
+                    } else if (kind === 'hr' && record.hr !== null && record.hr !== undefined) {
+                        if (record.hr >= 120 || record.hr < 45) level = 3;
+                        else if (record.hr >= 100 || record.hr < 50) level = 2;
+                    }
+                    return level ? `num alert-${level}` : 'num';
+                };
                 const cells = [
                     [record.date || '', ''],
                     [record.timeSlot === '早' ? '早' : '晚', ''],
                     [time, ''],
-                    [String(record.sys), 'num'],
-                    [String(record.dia), 'num'],
-                    [record.hr === null || record.hr === undefined ? '—' : String(record.hr), 'num']
+                    [String(record.sys), alertClass('sys')],
+                    [String(record.dia), alertClass('dia')],
+                    [record.hr === null || record.hr === undefined ? '—' : String(record.hr), alertClass('hr')]
                 ];
                 cells.forEach(([text, cls]) => {
                     const td = document.createElement('td');
