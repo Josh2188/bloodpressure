@@ -2,10 +2,16 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f3ee">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161411">
-    <script>if ('scrollRestoration' in history) history.scrollRestoration = 'manual';</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#f6f3ee">
+    <script>
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        (function () {
+            var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', dark ? '#161411' : '#f6f3ee');
+        })();
+    </script>
     <title>護心行動</title>
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icon-192.png">
@@ -1681,10 +1687,8 @@
         function applyTheme() {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             document.documentElement.classList.toggle('dark', isDark);
-            document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
-                const wantDark = meta.media && meta.media.indexOf('dark') !== -1;
-                meta.content = wantDark ? '#161411' : '#f6f3ee';
-            });
+            const themeMeta = document.querySelector('meta[name="theme-color"]');
+            if (themeMeta) themeMeta.setAttribute('content', isDark ? '#161411' : '#f6f3ee');
             if (chartInstance && bpRecords.length > 0) updateUI();
             if (!document.getElementById('advancedDashboard').classList.contains('hidden')) {
                 window.renderAdvancedCharts();
