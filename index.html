@@ -2,7 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f3ee">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161411">
     <script>if ('scrollRestoration' in history) history.scrollRestoration = 'manual';</script>
     <title>護心行動</title>
     <link rel="manifest" href="./manifest.webmanifest">
@@ -644,7 +646,7 @@
 
         #miaStickyCta {
             display: none;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
         }
         #miaStickyCta.is-visible {
             display: flex;
@@ -655,6 +657,17 @@
         body.doctor-mode #miaStickyCta { display: none !important; }
 
         /* ===== 沉穩藍綠：米白底、白卡片、深青重點。血壓綠／黃／紅留在數字上 ===== */
+        html {
+            background-color: #f6f3ee;
+            color-scheme: light;
+        }
+        @media (prefers-color-scheme: dark) {
+            html { background-color: #161411; color-scheme: dark; }
+        }
+        html.dark {
+            background-color: #161411;
+            color-scheme: dark;
+        }
         body.mia-app {
             background-color: #f6f3ee !important;
             background-image: none !important;
@@ -1455,7 +1468,7 @@
     </div>
 
     <!-- 今日還沒量：固定在底部的行動列 -->
-    <button type="button" id="miaStickyCta" onclick="window.focusBpInput()" class="hide-in-doctor-mode fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[min(92vw,32rem)] w-[calc(100%-2rem)] h-12 rounded-2xl text-sm font-black text-white mia-btn-save shadow-lg items-center justify-center gap-2">
+    <button type="button" id="miaStickyCta" onclick="window.focusBpInput()" class="hide-in-doctor-mode fixed left-1/2 -translate-x-1/2 z-40 max-w-[min(92vw,32rem)] w-[calc(100%-2rem)] h-12 rounded-2xl text-sm font-black text-white mia-btn-save shadow-lg items-center justify-center gap-2">
         <i class="ph-fill ph-heartbeat"></i>
         <span id="miaStickyCtaText">今天還沒量，點這裡記錄</span>
     </button>
@@ -1668,6 +1681,10 @@
         function applyTheme() {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             document.documentElement.classList.toggle('dark', isDark);
+            document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+                const wantDark = meta.media && meta.media.indexOf('dark') !== -1;
+                meta.content = wantDark ? '#161411' : '#f6f3ee';
+            });
             if (chartInstance && bpRecords.length > 0) updateUI();
             if (!document.getElementById('advancedDashboard').classList.contains('hidden')) {
                 window.renderAdvancedCharts();
@@ -6517,8 +6534,7 @@
             const metaTags = [ 
                 { name: 'apple-mobile-web-app-capable', content: 'yes' }, 
                 { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }, 
-                { name: 'apple-mobile-web-app-title', content: '護心行動' }, 
-                { name: 'theme-color', content: '#0f5f58' } 
+                { name: 'apple-mobile-web-app-title', content: '護心行動' }
             ]; 
             metaTags.forEach(tag => { 
                 const meta = document.createElement('meta'); 
