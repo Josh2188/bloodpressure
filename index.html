@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script>if ('scrollRestoration' in history) history.scrollRestoration = 'manual';</script>
     <title>護心行動</title>
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icon-192.png">
@@ -913,6 +914,40 @@
       <div id="viewBP" class="space-y-5">
 
         <!-- ========================================== -->
+        <!-- 輸入區塊：放最上面，打開就能打 -->
+        <!-- ========================================== -->
+        <section id="bpInputPanel" class="mia-input-panel bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
+            <div class="flex items-center justify-between mb-3">
+                <div class="mia-heading">
+                    <span class="mia-heading-icon mia-heading-icon--rose" aria-hidden="true"><i class="ph-fill ph-pencil-simple"></i></span>
+                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">輸入數值</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="medicated-toggle cursor-pointer relative flex items-center">
+                        <input type="checkbox" id="medicatedCheck" class="peer sr-only">
+                        <div class="flex items-center gap-1 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 transition-all text-[10px] font-bold uppercase tracking-wider" title="勾選代表：量測這一刻，今天的降壓藥已經吃了。早上若在服藥前量測，請保持不勾。">
+                            <i class="ph-fill ph-pill text-slate-400 transition-colors"></i> 今日已服藥
+                        </div>
+                    </label>
+                    <button onclick="window.showMeasurementGuide()" class="text-[10px] flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider font-bold">
+                        <i class="ph-bold ph-info"></i> 怎麼量
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" autofocus class="flex-1 w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="12080" aria-label="血壓數值盲打輸入">
+                <button type="button" onclick="window.processInput()" class="mia-btn-save flex-shrink-0 w-[3.25rem] h-[3.25rem] text-white font-bold rounded-2xl transition-transform flex justify-center items-center" aria-label="儲存紀錄">
+                    <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
+                </button>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 mt-3">
+                <span class="mia-hint">盲打：<strong>收縮</strong> / <strong>舒張</strong> / <strong>心率</strong>，例 <code>1208072</code></span>
+                <span class="mia-hint"><i class="ph-fill ph-pill text-rose-400"></i> 服藥前量測請勿勾「今日已服藥」</span>
+            </div>
+        </section>
+        <script>document.getElementById('inputData').focus();</script>
+
+        <!-- ========================================== -->
         <!-- 醫生模式專屬：門診摘要卡 -->
         <!-- ========================================== -->
         <section class="doctor-mode-show bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-indigo-100 dark:border-indigo-900/50 transition-all">
@@ -1055,39 +1090,6 @@
             <!-- 背景光暈裝飾 -->
             <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             <div class="absolute -left-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-        </section>
-
-        <!-- ========================================== -->
-        <!-- 輸入區塊 -->
-        <!-- ========================================== -->
-        <section id="bpInputPanel" class="mia-input-panel bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
-            <div class="flex items-center justify-between mb-3">
-                <div class="mia-heading">
-                    <span class="mia-heading-icon mia-heading-icon--rose" aria-hidden="true"><i class="ph-fill ph-pencil-simple"></i></span>
-                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">輸入數值</h2>
-                </div>
-                <div class="flex items-center gap-2">
-                    <label class="medicated-toggle cursor-pointer relative flex items-center">
-                        <input type="checkbox" id="medicatedCheck" class="peer sr-only">
-                        <div class="flex items-center gap-1 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 transition-all text-[10px] font-bold uppercase tracking-wider" title="勾選代表：量測這一刻，今天的降壓藥已經吃了。早上若在服藥前量測，請保持不勾。">
-                            <i class="ph-fill ph-pill text-slate-400 transition-colors"></i> 今日已服藥
-                        </div>
-                    </label>
-                    <button onclick="window.showMeasurementGuide()" class="text-[10px] flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider font-bold">
-                        <i class="ph-bold ph-info"></i> 怎麼量
-                    </button>
-                </div>
-            </div>
-            <div class="flex items-center gap-2.5">
-                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" autofocus class="flex-1 w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="12080" aria-label="血壓數值盲打輸入">
-                <button type="button" onclick="window.processInput()" class="mia-btn-save flex-shrink-0 w-[3.25rem] h-[3.25rem] text-white font-bold rounded-2xl transition-transform flex justify-center items-center" aria-label="儲存紀錄">
-                    <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
-                </button>
-            </div>
-            <div class="flex flex-col items-center gap-1.5 mt-3">
-                <span class="mia-hint">盲打：<strong>收縮</strong> / <strong>舒張</strong> / <strong>心率</strong>，例 <code>1208072</code></span>
-                <span class="mia-hint"><i class="ph-fill ph-pill text-rose-400"></i> 服藥前量測請勿勾「今日已服藥」</span>
-            </div>
         </section>
 
         <!-- ========================================== -->
@@ -2176,8 +2178,11 @@
             placeQuestAtTop();
             updateQuest();
             landOnBpInput();
+            window.addEventListener('pageshow', () => landOnBpInput());
             setTimeout(async () => {
                 await showOnboarding();
+                const input = document.getElementById('inputData');
+                if (document.activeElement === input && !(window.Swal && Swal.isVisible())) return;
                 await maybeShowComeback();
                 landOnBpInput();
             }, 400);
@@ -4012,8 +4017,8 @@
             const quest = document.getElementById('miaQuestCard');
             const input = document.getElementById('bpInputPanel');
             if (!view || !quest || !input) return;
-            view.insertBefore(input, view.firstElementChild);
-            view.insertBefore(quest, input.nextSibling);
+            if (view.firstElementChild !== input) view.insertBefore(input, view.firstElementChild);
+            if (input.nextElementSibling !== quest) view.insertBefore(quest, input.nextSibling);
         }
 
         function landOnBpInput() {
@@ -4021,8 +4026,8 @@
             if (window.Swal && Swal.isVisible()) return;
             const input = document.getElementById('inputData');
             if (!input) return;
-            window.scrollTo(0, 0);
-            input.focus({ preventScroll: true });
+            if (window.scrollY > 0) window.scrollTo(0, 0);
+            if (document.activeElement !== input) input.focus();
         }
 
         window.focusBpInput = function() {
