@@ -1079,7 +1079,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2.5">
-                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" class="flex-1 w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="12080" aria-label="血壓數值盲打輸入">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" autofocus class="flex-1 w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="12080" aria-label="血壓數值盲打輸入">
                 <button type="button" onclick="window.processInput()" class="mia-btn-save flex-shrink-0 w-[3.25rem] h-[3.25rem] text-white font-bold rounded-2xl transition-transform flex justify-center items-center" aria-label="儲存紀錄">
                     <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
                 </button>
@@ -2121,6 +2121,7 @@
         };
 
         window.onload = () => {
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
             injectPWA();
             applyTheme();
             loadProfile();              // 身高/目標等個人設定
@@ -2174,9 +2175,11 @@
             scheduleNextNotification();
             placeQuestAtTop();
             updateQuest();
+            landOnBpInput();
             setTimeout(async () => {
                 await showOnboarding();
                 await maybeShowComeback();
+                landOnBpInput();
             }, 400);
         };
 
@@ -2779,7 +2782,10 @@
                 confirmButtonColor: '#6366f1',
                 allowOutsideClick: false
             }).then(async (res) => {
-                if (!res.isConfirmed) return;
+                if (!res.isConfirmed) {
+                    landOnBpInput();
+                    return;
+                }
                 try {
                     cloudSync.setStatus('syncing', '登入中…');
                     const provider = new firebase.auth.GoogleAuthProvider();
@@ -4005,10 +4011,18 @@
             const view = document.getElementById('viewBP');
             const quest = document.getElementById('miaQuestCard');
             const input = document.getElementById('bpInputPanel');
-            const hero = document.getElementById('latestReadingHero');
-            if (!view || !quest || !input || !hero) return;
-            view.insertBefore(quest, hero);
-            view.insertBefore(input, hero);
+            if (!view || !quest || !input) return;
+            view.insertBefore(input, view.firstElementChild);
+            view.insertBefore(quest, input.nextSibling);
+        }
+
+        function landOnBpInput() {
+            if (isDoctorMode || currentModule !== 'bp') return;
+            if (window.Swal && Swal.isVisible()) return;
+            const input = document.getElementById('inputData');
+            if (!input) return;
+            window.scrollTo(0, 0);
+            input.focus({ preventScroll: true });
         }
 
         window.focusBpInput = function() {
