@@ -661,6 +661,8 @@
             padding-bottom: max(7.5rem, calc(env(safe-area-inset-bottom, 0px) + 5.5rem));
         }
         body.doctor-mode #miaStickyCta { display: none !important; }
+        /* 數字鍵盤已經在畫面上時，不用再浮一條「去記錄」，也免得蓋住按鍵 */
+        body.bp-pad-in-view #miaStickyCta { display: none !important; }
 
         /* ===== 沉穩藍綠：米白底、白卡片、深青重點。血壓綠／黃／紅留在數字上 ===== */
         html {
@@ -772,6 +774,51 @@
             box-shadow: none !important;
         }
         #inputData:focus { box-shadow: 0 0 0 4px rgba(15, 95, 88, 0.12); }
+        /* 自製數字鍵盤 */
+        .bp-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .bp-keypad button {
+            height: 54px;
+            border-radius: 14px;
+            border: 1px solid rgba(28, 25, 23, 0.06);
+            background: #f5f5f4;
+            color: #292524;
+            font-size: 1.6rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background-color 0.08s ease, transform 0.08s ease;
+        }
+        .bp-keypad button:active { background: #e7e5e4; transform: scale(0.97); }
+        .dark .bp-keypad button {
+            background: #292524;
+            color: #f5f5f4;
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+        .dark .bp-keypad button:active { background: #3a3530; }
+        .bp-keypad .bp-key-back { color: #57534e; font-size: 1.45rem; }
+        .dark .bp-keypad .bp-key-back { color: #d6d3d1; }
+        .bp-keypad .bp-key-save,
+        .dark .bp-keypad .bp-key-save {
+            background: #0f5f58;
+            color: #ffffff;
+            border-color: transparent;
+            font-size: 1.05rem;
+        }
+        .bp-keypad .bp-key-save:active,
+        .dark .bp-keypad .bp-key-save:active { background: #0b4a44; }
         #smartReadingCard {
             background: #ffffff !important;
             border-color: rgba(15, 95, 88, 0.12) !important;
@@ -953,11 +1000,21 @@
                     </button>
                 </div>
             </div>
-            <div class="flex items-center gap-2.5">
-                <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputData" autofocus class="flex-1 w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="12080" aria-label="血壓數值盲打輸入">
-                <button type="button" onclick="window.processInput()" class="mia-btn-save flex-shrink-0 w-[3.25rem] h-[3.25rem] text-white font-bold rounded-2xl transition-transform flex justify-center items-center" aria-label="儲存紀錄">
-                    <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
-                </button>
+            <!-- inputmode="none"：手機不跳系統鍵盤，改用下面自己的數字鍵；電腦照樣可以直接打字 -->
+            <input type="text" inputmode="none" pattern="[0-9]*" maxlength="9" autocomplete="off" id="inputData" autofocus class="w-full h-[3.25rem] bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-white rounded-2xl px-4 text-center text-2xl font-bold tracking-[0.2em] shadow-inner focus:ring-2 focus:ring-rose-500/25 focus:border-rose-400 focus:outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600" placeholder="1208072" aria-label="血壓數值盲打輸入">
+            <div id="bpKeypad" class="bp-keypad" role="group" aria-label="數字鍵盤">
+                <button type="button" data-key="1">1</button>
+                <button type="button" data-key="2">2</button>
+                <button type="button" data-key="3">3</button>
+                <button type="button" data-key="4">4</button>
+                <button type="button" data-key="5">5</button>
+                <button type="button" data-key="6">6</button>
+                <button type="button" data-key="7">7</button>
+                <button type="button" data-key="8">8</button>
+                <button type="button" data-key="9">9</button>
+                <button type="button" data-key="back" class="bp-key-back" aria-label="刪除一格，長按全部清除"><i class="ph-bold ph-backspace"></i></button>
+                <button type="button" data-key="0">0</button>
+                <button type="button" data-key="save" class="bp-key-save" aria-label="儲存紀錄"><i class="ph-bold ph-check"></i>儲存</button>
             </div>
             <div class="flex flex-col items-center gap-1.5 mt-3">
                 <span class="mia-hint">盲打：<strong>收縮</strong> / <strong>舒張</strong> / <strong>心率</strong>，例 <code>1208072</code></span>
@@ -2194,6 +2251,7 @@
                     }
                 });
             }
+            setupBpKeypad();
 
             scheduleNextNotification();
             placeQuestAtTop();
@@ -4051,6 +4109,75 @@
             if (document.activeElement !== input) input.focus();
         }
 
+        // 手機瀏覽器不允許網頁自己叫出系統鍵盤，所以畫面上放一組數字鍵，打開就能按
+        function setupBpKeypad() {
+            const pad = document.getElementById('bpKeypad');
+            const input = document.getElementById('inputData');
+            if (!pad || !input) return;
+            const MAX_DIGITS = 9;
+            let holdTimer = null;
+            let clearedByHold = false;
+
+            const keepCaret = () => {
+                try {
+                    input.focus({ preventScroll: true });
+                    const end = input.value.length;
+                    input.setSelectionRange(end, end);
+                } catch (e) {}
+            };
+
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(([entry]) => {
+                    document.body.classList.toggle('bp-pad-in-view', entry.isIntersecting);
+                }).observe(pad);
+            }
+
+            // 按鍵不搶走輸入框的游標
+            pad.addEventListener('mousedown', (e) => e.preventDefault());
+            pad.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            pad.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-key]');
+                if (!btn) return;
+                const key = btn.dataset.key;
+
+                if (key === 'save') {
+                    if (!input.value) { hapticFeedback([20, 40, 20]); keepCaret(); return; }
+                    window.processInput();
+                    return;
+                }
+                if (key === 'back') {
+                    if (clearedByHold) { clearedByHold = false; return; }
+                    input.value = input.value.slice(0, -1);
+                } else if (input.value.length < MAX_DIGITS) {
+                    input.value += key;
+                } else {
+                    hapticFeedback([20, 40, 20]);
+                    return;
+                }
+                hapticFeedback(8);
+                keepCaret();
+            });
+
+            // 長按刪除鍵：全部清掉
+            const back = pad.querySelector('[data-key="back"]');
+            if (back) {
+                back.addEventListener('pointerdown', () => {
+                    clearedByHold = false;
+                    clearTimeout(holdTimer);
+                    holdTimer = setTimeout(() => {
+                        input.value = '';
+                        clearedByHold = true;
+                        hapticFeedback(30);
+                        keepCaret();
+                    }, 550);
+                });
+                ['pointerup', 'pointerleave', 'pointercancel'].forEach((type) => {
+                    back.addEventListener(type, () => clearTimeout(holdTimer));
+                });
+            }
+        }
+
         window.focusBpInput = function() {
             if (currentModule !== 'bp') window.switchModule('bp');
             const input = document.getElementById('inputData');
@@ -4061,10 +4188,7 @@
             void panel.offsetWidth;
             panel.classList.add('mia-input-nudge');
             setTimeout(() => panel.classList.remove('mia-input-nudge'), 2200);
-            setTimeout(() => {
-                input.focus();
-                try { input.click(); } catch (e) {}
-            }, 280);
+            setTimeout(() => input.focus({ preventScroll: true }), 280);
         };
 
         function updateQuest() {
