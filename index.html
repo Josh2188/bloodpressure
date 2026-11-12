@@ -819,6 +819,31 @@
         }
         .bp-keypad .bp-key-save:active,
         .dark .bp-keypad .bp-key-save:active { background: #0b4a44; }
+        /* 上面兩塊精簡成一兩行，數字鍵才能整組留在畫面裡 */
+        #viewBP > #miaQuestCard { padding: 12px 14px !important; }
+        #miaQuestCard #miaQuestAvatar {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 12px;
+        }
+        #miaQuestCard #miaQuestAvatar i { font-size: 1.05rem; }
+        #miaQuestCard #miaQuestSlots,
+        #miaQuestCard #miaQuestMeta,
+        #miaQuestCard #miaQuestCta { display: none !important; }
+        #miaQuestCard #miaQuestBody {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        #viewBP > #latestReadingHero {
+            padding: 12px 16px !important;
+            margin-top: 12px !important;
+        }
+        #viewBP > #bpInputPanel { margin-top: 12px !important; }
+        #latestReadingHero #latestHeroSys { font-size: 2.25rem; }
+        #latestReadingHero #latestHeroDia { font-size: 1.6rem; }
+        #latestReadingHero > .absolute { display: none; }
         #smartReadingCard {
             background: #ffffff !important;
             border-color: rgba(15, 95, 88, 0.12) !important;
@@ -980,7 +1005,64 @@
       <div id="viewBP" class="space-y-5">
 
         <!-- ========================================== -->
-        <!-- 輸入區塊：放最上面，打開就能打 -->
+        <!--  今日護心任務（激勵、歡迎回來、保住連續） -->
+        <!-- ========================================== -->
+        <section id="miaQuestCard" class="hide-in-doctor-mode relative overflow-hidden rounded-2xl p-4 transition-all duration-300">
+            <div class="relative z-10">
+                <div class="flex items-start gap-3">
+                    <div id="miaQuestAvatar" class="flex-shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-white flex items-center justify-center shadow-md">
+                        <i class="ph-fill ph-heart text-xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                            <h2 id="miaQuestTitle" class="text-base font-black text-slate-800 dark:text-slate-100">今日護心任務</h2>
+                            <span id="miaQuestStreak" class="hidden text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"></span>
+                        </div>
+                        <p id="miaQuestBody" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">今天早晚各記一筆就好。</p>
+                    </div>
+                </div>
+                <div id="miaQuestSlots" class="mt-3 flex items-center gap-2"></div>
+                <button type="button" id="miaQuestCta" onclick="window.focusBpInput()" class="hidden mt-3 w-full h-11 rounded-xl text-sm font-black text-white mia-btn-save items-center justify-center gap-1.5">
+                    現在就量
+                </button>
+                <div id="miaQuestMeta" class="mt-2.5 flex items-center justify-between gap-2 text-[10px] font-bold text-slate-400"></div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- Hero 最新血壓大數字儀表 -->
+        <!-- ========================================== -->
+        <section id="latestReadingHero" class="hidden relative overflow-hidden rounded-2xl p-5 text-white shadow-md hide-in-doctor-mode transition-all duration-300 bp-tier-normal">
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-1.5 text-white/85 text-[11px] font-bold uppercase tracking-wider mb-0.5">
+                        <i class="ph-fill ph-heartbeat"></i>
+                        <span>最新一筆</span>
+                        <span id="latestHeroSlot" class="bg-white/20 px-1.5 py-px rounded text-[9px]"></span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span id="latestHeroSys" class="text-5xl font-black leading-none tracking-tight">--</span>
+                        <span class="text-2xl font-black opacity-70">/</span>
+                        <span id="latestHeroDia" class="text-3xl font-black leading-none">--</span>
+                        <span class="text-[10px] font-bold opacity-75 ml-1">mmHg</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1.5 text-[11px] font-medium text-white/85">
+                        <span id="latestHeroHr" class="flex items-center gap-1"><i class="ph-fill ph-pulse"></i><span>--</span> bpm</span>
+                        <span class="opacity-50">·</span>
+                        <span id="latestHeroAgo">剛剛</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1.5">
+                    <span id="latestHeroTier" class="text-xs font-black px-3 py-1 rounded-full bg-white/25 backdrop-blur-sm">--</span>
+                    <span id="latestHeroMed" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 flex items-center gap-1"><i class="ph-fill ph-pill"></i>今日已服藥</span>
+                </div>
+            </div>
+            <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-10 -bottom-10 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 輸入區塊：今日狀態、最新一筆底下，數字鍵靠近拇指 -->
         <!-- ========================================== -->
         <section id="bpInputPanel" class="mia-input-panel bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-transparent dark:border-slate-800 hide-in-doctor-mode transition-colors duration-300">
             <div class="flex items-center justify-between mb-3">
@@ -1039,63 +1121,6 @@
             <div id="doctorSummaryContent" class="grid grid-cols-2 gap-3">
                 <!-- 動態注入門診數據 -->
             </div>
-        </section>
-
-        <!-- ========================================== -->
-        <!--  今日護心任務（激勵、歡迎回來、保住連續） -->
-        <!-- ========================================== -->
-        <section id="miaQuestCard" class="hide-in-doctor-mode relative overflow-hidden rounded-2xl p-4 transition-all duration-300">
-            <div class="relative z-10">
-                <div class="flex items-start gap-3">
-                    <div id="miaQuestAvatar" class="flex-shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-white flex items-center justify-center shadow-md">
-                        <i class="ph-fill ph-heart text-xl"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                            <h2 id="miaQuestTitle" class="text-base font-black text-slate-800 dark:text-slate-100">今日護心任務</h2>
-                            <span id="miaQuestStreak" class="hidden text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"></span>
-                        </div>
-                        <p id="miaQuestBody" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">今天早晚各記一筆就好。</p>
-                    </div>
-                </div>
-                <div id="miaQuestSlots" class="mt-3 flex items-center gap-2"></div>
-                <button type="button" id="miaQuestCta" onclick="window.focusBpInput()" class="hidden mt-3 w-full h-11 rounded-xl text-sm font-black text-white mia-btn-save items-center justify-center gap-1.5">
-                    現在就量
-                </button>
-                <div id="miaQuestMeta" class="mt-2.5 flex items-center justify-between gap-2 text-[10px] font-bold text-slate-400"></div>
-            </div>
-        </section>
-
-        <!-- ========================================== -->
-        <!-- Hero 最新血壓大數字儀表 -->
-        <!-- ========================================== -->
-        <section id="latestReadingHero" class="hidden relative overflow-hidden rounded-2xl p-5 text-white shadow-md hide-in-doctor-mode transition-all duration-300 bp-tier-normal">
-            <div class="relative z-10 flex items-center justify-between">
-                <div class="flex flex-col">
-                    <div class="flex items-center gap-1.5 text-white/85 text-[11px] font-bold uppercase tracking-wider mb-0.5">
-                        <i class="ph-fill ph-heartbeat"></i>
-                        <span>最新一筆</span>
-                        <span id="latestHeroSlot" class="bg-white/20 px-1.5 py-px rounded text-[9px]"></span>
-                    </div>
-                    <div class="flex items-baseline gap-1">
-                        <span id="latestHeroSys" class="text-5xl font-black leading-none tracking-tight">--</span>
-                        <span class="text-2xl font-black opacity-70">/</span>
-                        <span id="latestHeroDia" class="text-3xl font-black leading-none">--</span>
-                        <span class="text-[10px] font-bold opacity-75 ml-1">mmHg</span>
-                    </div>
-                    <div class="flex items-center gap-2 mt-1.5 text-[11px] font-medium text-white/85">
-                        <span id="latestHeroHr" class="flex items-center gap-1"><i class="ph-fill ph-pulse"></i><span>--</span> bpm</span>
-                        <span class="opacity-50">·</span>
-                        <span id="latestHeroAgo">剛剛</span>
-                    </div>
-                </div>
-                <div class="flex flex-col items-end gap-1.5">
-                    <span id="latestHeroTier" class="text-xs font-black px-3 py-1 rounded-full bg-white/25 backdrop-blur-sm">--</span>
-                    <span id="latestHeroMed" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 flex items-center gap-1"><i class="ph-fill ph-pill"></i>今日已服藥</span>
-                </div>
-            </div>
-            <div class="absolute -right-8 -top-8 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -left-10 -bottom-10 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
         </section>
 
         <!-- ========================================== -->
@@ -4091,13 +4116,16 @@
             };
         }
 
+        // 順序：今日狀態 → 最新一筆 → 輸入區。HTML 已經照這個順序寫好，這裡只是保險；
+        // 只搬上面兩塊、不搬輸入區，免得輸入框的游標被清掉
         function placeQuestAtTop() {
             const view = document.getElementById('viewBP');
             const quest = document.getElementById('miaQuestCard');
+            const latest = document.getElementById('latestReadingHero');
             const input = document.getElementById('bpInputPanel');
-            if (!view || !quest || !input) return;
-            if (view.firstElementChild !== input) view.insertBefore(input, view.firstElementChild);
-            if (input.nextElementSibling !== quest) view.insertBefore(quest, input.nextSibling);
+            if (!view || !quest || !latest || !input) return;
+            if (view.firstElementChild !== quest) view.insertBefore(quest, view.firstElementChild);
+            if (quest.nextElementSibling !== latest) view.insertBefore(latest, quest.nextSibling);
         }
 
         function landOnBpInput() {
