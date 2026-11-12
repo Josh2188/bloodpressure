@@ -581,7 +581,7 @@
             padding-bottom: max(6rem, calc(env(safe-area-inset-bottom, 0px) + 4rem));
         }
         /* 安卓最下面的系統按鍵列：頁面畫到它底下，鋪一條色塊。
-           深色用黑；淺色跟頁面同色，免得黑底配黑色按鍵看不到 */
+           深色跟夜間頁面同色；淺色跟頁面同色，免得深底配深色按鍵看不到 */
         #sysNavFill {
             position: fixed;
             left: 0;
@@ -593,9 +593,9 @@
             pointer-events: none;
         }
         @media (prefers-color-scheme: dark) {
-            #sysNavFill { background: #000000; }
+            #sysNavFill { background: #161411; }
         }
-        html.dark #sysNavFill { background: #000000; }
+        html.dark #sysNavFill { background: #161411; }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {

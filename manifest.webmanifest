@@ -4,8 +4,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f3ee",
-  "theme_color": "#000000",
+  "background_color": "#161411",
+  "theme_color": "#161411",
   "lang": "zh-Hant",
   "icons": [
     {
@@ -18,7 +18,7 @@
   "user_preferences": {
     "color_scheme": {
       "dark": {
-        "theme_color": "#000000",
+        "theme_color": "#161411",
         "background_color": "#161411"
       }
     }
